@@ -17,7 +17,6 @@ secrets/
 # PERSONAL DATA (use .example versions for public repo)
 # ═══════════════════════════════════════════════════════════════════════════
 resume/base/master.tex
-linkedin/profile/content.md
 github/profile/README.md
 portfolio/website/src/pages/index.astro
 templates/cover_letters/*.md
@@ -89,8 +88,7 @@ screenshots/
 # LinkedIn generated content
 linkedin/posts/drafts/*.json
 linkedin/posts/scheduled/*.json
-linkedin/profile/*.md
-!linkedin/profile/content.md
+linkedin/profile/
 
 # Resume sync outputs
 resume/sync_report.md
@@ -135,6 +133,7 @@ data/*.log
 # ═══════════════════════════════════════════════════════════════════════════
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
