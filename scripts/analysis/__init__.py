@@ -9,8 +9,8 @@ Exports:
     generate_report: Generate human-readable ATS score report
 """
 
-from .job_analyzer import JobAnalyzer, JobAnalysis, JobRequirement
-from .ats_scorer import ATSScorer, ATSScore, generate_report
+from .ats_scorer import ATSScore, ATSScorer, generate_report
+from .job_analyzer import JobAnalysis, JobAnalyzer, JobRequirement
 
 __all__ = [
     "JobAnalyzer",

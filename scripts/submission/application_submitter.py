@@ -7,10 +7,12 @@ Supports two modes:
 2. MCP mode: Returns instructions for Claude to execute via Playwright MCP
 """
 
+from __future__ import annotations
+
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Configuration
 APPLIED_DIR = Path("jobs/applied")
@@ -20,23 +22,27 @@ SCREENSHOTS_DIR = Path("screenshots")
 
 # Try to import Playwright
 try:
-    from playwright.sync_api import sync_playwright, Page, Browser
+    from playwright.sync_api import Locator, Page, sync_playwright
+
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
 
 
-def load_profile() -> dict:
+def load_profile() -> dict[str, Any]:
     """Load user profile for form filling."""
     profile_path = CONFIG_DIR / "master_profile.yaml"
     if profile_path.exists():
         import yaml
+
         with open(profile_path) as f:
-            return yaml.safe_load(f)
+            data = yaml.safe_load(f)
+        if isinstance(data, dict):
+            return data
     return {}
 
 
-def get_resume_variant(job_id: str) -> Optional[Path]:
+def get_resume_variant(job_id: str) -> Path | None:
     """Get the resume variant for a specific job."""
     variants_dir = RESUME_DIR / "variants"
 
@@ -104,17 +110,11 @@ def validate_submission(job: dict, resume_path: Path) -> dict:
         if job.get("status") == "applied":
             errors.append("Already applied to this position")
 
-    return {
-        "valid": len(errors) == 0,
-        "errors": errors
-    }
+    return {"valid": len(errors) == 0, "errors": errors}
 
 
 def submit_application(
-    job: dict,
-    resume_path: Path,
-    cover_letter_path: Optional[Path] = None,
-    confirm: bool = True
+    job: dict, resume_path: Path, cover_letter_path: Path | None = None, confirm: bool = True
 ) -> dict:
     """
     Submit job application using Playwright automation.
@@ -134,10 +134,7 @@ def submit_application(
     # Validate first
     validation = validate_submission(job, resume_path)
     if not validation["valid"]:
-        return {
-            "status": "validation_failed",
-            "errors": validation["errors"]
-        }
+        return {"status": "validation_failed", "errors": validation["errors"]}
 
     # Load profile for form filling
     profile = load_profile()
@@ -154,14 +151,7 @@ def submit_application(
         "title": job.get("title", "Unknown"),
         "resume_path": str(resume_path),
         "cover_letter_path": str(cover_letter_path) if cover_letter_path else None,
-        "form_data": {
-            "name": personal.get("name", ""),
-            "email": personal.get("email", ""),
-            "phone": personal.get("phone", ""),
-            "linkedin": personal.get("linkedin", ""),
-            "website": personal.get("website", ""),
-            "location": personal.get("location", ""),
-        },
+        "form_data": _extract_form_data(personal),
         "job_id": job.get("id"),
         "timestamp": datetime.now().isoformat(),
     }
@@ -170,7 +160,7 @@ def submit_application(
         return {
             "status": "awaiting_confirmation",
             "message": "Review submission data and confirm to proceed",
-            "submission_data": submission_data
+            "submission_data": submission_data,
         }
 
     # Try Playwright automation if available
@@ -183,7 +173,7 @@ def submit_application(
                 "status": "error",
                 "message": f"Playwright automation failed: {str(e)}",
                 "submission_data": submission_data,
-                "fallback": "Use MCP mode or manual submission"
+                "fallback": "Use MCP mode or manual submission",
             }
 
     # Fallback: Return instructions for Claude to execute via Playwright MCP
@@ -194,17 +184,42 @@ def submit_application(
             "tools": [
                 {"tool": "browser_navigate", "params": {"url": application_url}},
                 {"tool": "browser_snapshot", "params": {}},
-                {"tool": "browser_fill_form", "params": {"fields": _map_form_fields(submission_data["form_data"])}},
+                {
+                    "tool": "browser_fill_form",
+                    "params": {"fields": _map_form_fields(submission_data["form_data"])},
+                },
                 {"tool": "browser_file_upload", "params": {"paths": [str(resume_path)]}},
                 {"tool": "browser_click", "params": {"element": "Submit button"}},
                 {"tool": "browser_take_screenshot", "params": {"type": "png"}},
             ]
         },
-        "submission_data": submission_data
+        "submission_data": submission_data,
     }
 
 
-def _map_form_fields(form_data: dict) -> List[Dict[str, Any]]:
+def _extract_form_data(personal: dict) -> dict[str, str]:
+    """Extract form data from profile, handling both flat and nested structures."""
+
+    def _get(key: str, *nested_keys: str) -> str:
+        val = personal.get(key, "")
+        if isinstance(val, dict):
+            for nk in nested_keys:
+                val = val.get(nk, "")
+                if not isinstance(val, dict):
+                    break
+        return str(val) if val else ""
+
+    return {
+        "name": _get("name", "full"),
+        "email": _get("email") or _get("contact", "email"),
+        "phone": _get("phone") or _get("contact", "phone"),
+        "linkedin": _get("linkedin") or _get("social", "linkedin"),
+        "website": _get("website") or _get("social", "website"),
+        "location": _get("location"),
+    }
+
+
+def _map_form_fields(form_data: dict) -> list[dict[str, Any]]:
     """Map form data to Playwright MCP fill_form format."""
     field_mapping = {
         "name": {"type": "textbox", "patterns": ["name", "full name", "your name"]},
@@ -218,12 +233,14 @@ def _map_form_fields(form_data: dict) -> List[Dict[str, Any]]:
     fields = []
     for key, value in form_data.items():
         if value and key in field_mapping:
-            fields.append({
-                "name": key,
-                "type": field_mapping[key]["type"],
-                "value": value,
-                "patterns": field_mapping[key]["patterns"]
-            })
+            fields.append(
+                {
+                    "name": key,
+                    "type": field_mapping[key]["type"],
+                    "value": value,
+                    "patterns": field_mapping[key]["patterns"],
+                }
+            )
     return fields
 
 
@@ -238,7 +255,9 @@ def execute_playwright_submission(submission_data: dict) -> dict:
         Submission result with status and screenshot path
     """
     if not PLAYWRIGHT_AVAILABLE:
-        raise RuntimeError("Playwright not installed. Run: pip install playwright && playwright install chromium")
+        raise RuntimeError(
+            "Playwright not installed. Run: pip install playwright && playwright install chromium"
+        )
 
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -262,10 +281,7 @@ def execute_playwright_submission(submission_data: dict) -> dict:
 
             # Upload resume
             resume_path = submission_data.get("resume_path")
-            if resume_path:
-                uploaded = _upload_resume(page, resume_path)
-            else:
-                uploaded = False
+            uploaded = _upload_resume(page, resume_path) if resume_path else False
 
             # Take screenshot before submission
             page.screenshot(path=str(screenshot_path))
@@ -289,18 +305,27 @@ def execute_playwright_submission(submission_data: dict) -> dict:
             raise e
 
 
-def _fill_application_form(page: "Page", form_data: dict) -> List[str]:
+def _fill_application_form(page: Page, form_data: dict) -> list[str]:
     """Fill form fields on the page."""
     filled = []
 
     # Common field selectors
     field_selectors = {
-        "name": ['input[name*="name" i]', 'input[placeholder*="name" i]', '#name', '#fullName'],
-        "email": ['input[type="email"]', 'input[name*="email" i]', '#email'],
-        "phone": ['input[type="tel"]', 'input[name*="phone" i]', 'input[name*="mobile" i]', '#phone'],
+        "name": ['input[name*="name" i]', 'input[placeholder*="name" i]', "#name", "#fullName"],
+        "email": ['input[type="email"]', 'input[name*="email" i]', "#email"],
+        "phone": [
+            'input[type="tel"]',
+            'input[name*="phone" i]',
+            'input[name*="mobile" i]',
+            "#phone",
+        ],
         "linkedin": ['input[name*="linkedin" i]', 'input[placeholder*="linkedin" i]'],
         "website": ['input[name*="website" i]', 'input[name*="portfolio" i]'],
-        "location": ['input[name*="location" i]', 'input[name*="city" i]', 'input[name*="address" i]'],
+        "location": [
+            'input[name*="location" i]',
+            'input[name*="city" i]',
+            'input[name*="address" i]',
+        ],
     }
 
     for field_name, value in form_data.items():
@@ -348,8 +373,8 @@ def _fill_application_form(page: "Page", form_data: dict) -> List[str]:
 
 
 def _extract_unfilled_labels(
-    page: "Page", already_filled: List[str]
-) -> List[tuple[str, Dict[str, Any]]]:
+    page: Page, already_filled: list[str]
+) -> list[tuple[str, dict[str, Any]]]:
     """
     Extract labels and their associated input elements for unfilled fields.
 
@@ -383,26 +408,25 @@ def _extract_unfilled_labels(
                 tag = input_el.evaluate("el => el.tagName.toLowerCase()")
                 input_type = input_el.get_attribute("type") or "text"
 
-                element_info: Dict[str, Any] = {"element": input_el, "type": input_type}
+                element_info: dict[str, Any] = {"element": input_el, "type": input_type}
 
                 if tag == "select":
                     element_info["type"] = "dropdown"
                     option_els = input_el.locator("option").all()
                     element_info["options"] = [
-                        o.inner_text().strip() for o in option_els
-                        if o.inner_text().strip()
+                        o.inner_text().strip() for o in option_els if o.inner_text().strip()
                     ]
 
                 results.append((label_text, element_info))
             except Exception:
                 continue
     except Exception:
-        pass
+        pass  # Best-effort extraction; return whatever was collected
 
     return results
 
 
-def _upload_resume(page: "Page", resume_path: str) -> bool:
+def _upload_resume(page: Page, resume_path: str) -> bool:
     """Upload resume file."""
     try:
         # Common file input selectors
@@ -427,7 +451,7 @@ def _upload_resume(page: "Page", resume_path: str) -> bool:
         return False
 
 
-def _find_submit_button(page: "Page"):
+def _find_submit_button(page: Page) -> Locator | None:
     """Find the submit button on the page."""
     submit_selectors = [
         'button[type="submit"]',
@@ -460,12 +484,7 @@ def record_application(job: dict, result: dict) -> Path:
     filename = f"{company}_{job_id}_{timestamp}.json"
     filepath = APPLIED_DIR / filename
 
-    record = {
-        "job": job,
-        "result": result,
-        "timestamp": timestamp,
-        "status": result.get("status")
-    }
+    record = {"job": job, "result": result, "timestamp": timestamp, "status": result.get("status")}
 
     with open(filepath, "w") as f:
         json.dump(record, f, indent=2)
@@ -502,8 +521,8 @@ def apply_to_job(job_id: str, confirm: bool = False) -> dict:
     # Submit
     result = submit_application(job, resume_path, confirm=confirm)
 
-    # Record
-    if result.get("status") == "submitted":
+    # Record any successful submission attempt
+    if result.get("status") in ("submitted", "ready_for_review", "ready_to_submit"):
         record_path = record_application(job, result)
         result["record_path"] = str(record_path)
 
@@ -512,6 +531,7 @@ def apply_to_job(job_id: str, confirm: bool = False) -> dict:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python application_submitter.py <job_id> [--confirm]")
         sys.exit(1)

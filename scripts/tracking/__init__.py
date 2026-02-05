@@ -6,7 +6,7 @@ Exports:
     Application: Dataclass representing a job application
 """
 
-from .tracker import ApplicationTracker, Application
+from .tracker import Application, ApplicationTracker
 
 __all__ = [
     "ApplicationTracker",

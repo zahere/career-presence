@@ -210,15 +210,26 @@ career-presence/
 - ✅ Use separate browser profile for automation
 
 ### Pre-Commit Verification (ALWAYS DO THIS)
-Before every commit, run verification to ensure no personal data is exposed:
+Before every commit, run these checks:
 ```bash
-# Check staged files for personal info patterns
+# 1. Check staged files for personal info (cross-ref with config/master_profile.yaml)
 git diff --cached --name-only | xargs grep -l -E "(your-email|your-name|phone|address)" 2>/dev/null
 
-# Verify .gitignore is working
-git status --short | grep -E "(master_profile|site.config.ts|Layout.astro)"
+# 2. Verify .gitignore is working (no sensitive files staged)
+git status --short | grep -E "(master_profile|credentials\.env|site.config.ts)"
+
+# 3. Lint and format
+uv run ruff check scripts/
+uv run ruff format --check scripts/
+
+# 4. Type check
+uv run python -m mypy scripts/ --ignore-missing-imports
+
+# 5. Tests
+uv run pytest tests/ -v
 ```
 If any personal data is found, unstage the file or add it to .gitignore.
+If linting or tests fail, fix the issues before committing.
 
 **Gitignored Personal Data:**
 - `config/master_profile.yaml` → use `master_profile.yaml.example`

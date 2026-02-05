@@ -6,13 +6,13 @@ Uses pattern matching for standard questions and fuzzy matching for
 dropdown option selection.
 """
 
+from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import yaml
-
 
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
@@ -84,7 +84,7 @@ class AnswerResolver:
     custom_answers: dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def from_profile(cls, profile_path: Optional[Path] = None) -> "AnswerResolver":
+    def from_profile(cls, profile_path: Path | None = None) -> AnswerResolver:
         """Load answer resolver from master_profile.yaml."""
         path = profile_path or CONFIG_DIR / "master_profile.yaml"
         if not path.exists():
@@ -105,8 +105,8 @@ class AnswerResolver:
         self,
         question: str,
         field_type: str = "text",
-        options: Optional[list[str]] = None,
-    ) -> Optional[ResolvedAnswer]:
+        options: list[str] | None = None,
+    ) -> ResolvedAnswer | None:
         """
         Resolve a single question to an answer.
 
@@ -141,7 +141,9 @@ class AnswerResolver:
                 if re.search(pattern, question_lower):
                     raw_answer = self.answers.get(answer_key)
                     if raw_answer:
-                        answer = self._fit_to_options(raw_answer, options) if options else raw_answer
+                        answer = (
+                            self._fit_to_options(raw_answer, options) if options else raw_answer
+                        )
                         return ResolvedAnswer(
                             question=question,
                             answer=answer,
@@ -153,9 +155,7 @@ class AnswerResolver:
 
         return None
 
-    def resolve_all(
-        self, questions: list[dict[str, str]]
-    ) -> list[ResolvedAnswer]:
+    def resolve_all(self, questions: list[dict[str, str]]) -> list[ResolvedAnswer]:
         """
         Batch-resolve a list of questions.
 
@@ -179,7 +179,7 @@ class AnswerResolver:
         return results
 
     @staticmethod
-    def _fit_to_options(answer: str, options: Optional[list[str]]) -> str:
+    def _fit_to_options(answer: str, options: list[str] | None) -> str:
         """
         Find the best matching option from a dropdown/radio list.
 

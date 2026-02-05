@@ -6,7 +6,7 @@ Exports:
     WebsiteConfig: Dataclass for website generation configuration
 """
 
-from .generator import WebsiteGenerator, WebsiteConfig
+from .generator import WebsiteConfig, WebsiteGenerator
 
 __all__ = [
     "WebsiteGenerator",

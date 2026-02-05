@@ -7,7 +7,7 @@ Exports:
     SyncResult: Dataclass for sync operation results
 """
 
-from .sync_manager import PlatformSyncManager, Platform, SyncResult
+from .sync_manager import Platform, PlatformSyncManager, SyncResult
 
 __all__ = [
     "PlatformSyncManager",

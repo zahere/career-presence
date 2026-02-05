@@ -10,10 +10,10 @@ Exports:
 """
 
 from .config_validator import (
-    TargetsConfig,
     MasterProfileConfig,
-    load_validated_targets,
+    TargetsConfig,
     load_validated_profile,
+    load_validated_targets,
     validate_all_configs,
 )
 

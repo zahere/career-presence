@@ -5,14 +5,16 @@ Career Presence System CLI
 Main entry point for all career management commands.
 """
 
+from __future__ import annotations
+
 import json
+from datetime import datetime
+from pathlib import Path
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from typing import Optional
-from pathlib import Path
-from datetime import datetime
 
 app = typer.Typer(
     name="cps",
@@ -26,6 +28,7 @@ console = Console()
 # JOB SEARCH COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @app.command()
 def discover(
     query: str = typer.Argument(..., help="Search query (e.g., 'AI Engineer remote')"),
@@ -33,14 +36,17 @@ def discover(
     limit: int = typer.Option(25, help="Max results per platform"),
     hours: int = typer.Option(72, help="Jobs posted within this many hours"),
     location: str = typer.Option("remote", help="Location filter"),
+    locale: str | None = typer.Option(
+        None, help="Locale for region-specific config (e.g., 'israel')"
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimal output"),
-):
+) -> None:
     """Search for jobs across platforms."""
     console.print(f"[blue]Discovering jobs:[/blue] {query}")
     console.print(f"Platforms: {platforms}, Limit: {limit}, Hours: {hours}")
 
     try:
-        from scripts.discovery import search_jobs, print_summary
+        from scripts.discovery import print_summary, search_jobs
 
         sites = [s.strip() for s in platforms.split(",")]
         result = search_jobs(
@@ -50,6 +56,7 @@ def discover(
             results_wanted=limit,
             hours_old=hours,
             output_format="both",
+            locale=locale,
         )
 
         if not quiet:
@@ -71,15 +78,11 @@ def discover(
 def analyze(
     job_url: str = typer.Argument(..., help="URL of job posting to analyze"),
     deep: bool = typer.Option(False, "--deep", help="Perform deep analysis"),
-):
+) -> None:
     """Analyze a job posting."""
     console.print(f"[blue]Analyzing:[/blue] {job_url}")
 
     try:
-        from scripts.analysis import JobAnalyzer
-
-        analyzer = JobAnalyzer()
-
         # For URL-based analysis, we need to fetch the job first
         # This is a simplified version - full implementation would use web fetch
         job_data = {
@@ -92,9 +95,7 @@ def analyze(
         }
 
         # Try to extract info from URL
-        if "greenhouse" in job_url:
-            job_data["company"] = job_url.split("/")[-2] if "/" in job_url else "Unknown"
-        elif "lever" in job_url:
+        if "greenhouse" in job_url or "lever" in job_url:
             job_data["company"] = job_url.split("/")[-2] if "/" in job_url else "Unknown"
 
         console.print("[yellow]Note: Full analysis requires job description text.[/yellow]")
@@ -116,8 +117,8 @@ def analyze(
 @app.command()
 def tailor(
     job_id: str = typer.Argument(..., help="Job ID to tailor resume for"),
-    template: Optional[str] = typer.Option(None, help="Template to use"),
-):
+    template: str | None = typer.Option(None, help="Template to use"),
+) -> None:
     """Generate tailored resume variant."""
     console.print(f"[blue]Tailoring resume for:[/blue] {job_id}")
 
@@ -164,7 +165,7 @@ def apply(
     job_id: str = typer.Argument(..., help="Job ID to apply to"),
     confirm: bool = typer.Option(False, "--confirm", help="Confirm submission"),
     auto: bool = typer.Option(False, "--auto", help="Auto-apply (whitelisted only)"),
-):
+) -> None:
     """Submit job application."""
     if not confirm and not auto:
         console.print("[yellow]⚠️ Add --confirm or --auto to submit[/yellow]")
@@ -178,7 +179,7 @@ def apply(
         result = apply_to_job(job_id, confirm=confirm)
 
         if result.get("status") == "submitted":
-            console.print(f"[green]✅ Application submitted![/green]")
+            console.print("[green]✅ Application submitted![/green]")
             if result.get("record_path"):
                 console.print(f"[dim]Record: {result['record_path']}[/dim]")
         elif result.get("status") == "validation_failed":
@@ -200,12 +201,13 @@ def apply(
 # RESUME COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @app.command()
 def ats_score(
     resume_path: Path = typer.Argument(..., help="Path to resume PDF or LaTeX"),
-    job_path: Optional[Path] = typer.Option(None, help="Path to job description file"),
-    job_text: Optional[str] = typer.Option(None, help="Job description text"),
-):
+    job_path: Path | None = typer.Option(None, help="Path to job description file"),
+    job_text: str | None = typer.Option(None, help="Job description text"),
+) -> None:
     """Calculate ATS score for resume."""
     console.print(f"[blue]Scoring:[/blue] {resume_path}")
 
@@ -254,8 +256,9 @@ def ats_score(
 # TRACKING COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @app.command()
-def status():
+def status() -> None:
     """Display application pipeline summary."""
     try:
         from scripts.tracking import ApplicationTracker
@@ -266,20 +269,24 @@ def status():
 
     except Exception as e:
         # Fall back to basic display if tracker fails
-        console.print(Panel.fit(
-            "[green]Pipeline Status[/green]\n"
-            f"├── Error loading tracker: {e}\n"
-            "└── Run 'cps discover' to start finding jobs",
-            title="Career Presence System"
-        ))
+        console.print(
+            Panel.fit(
+                "[green]Pipeline Status[/green]\n"
+                f"├── Error loading tracker: {e}\n"
+                "└── Run 'cps discover' to start finding jobs",
+                title="Career Presence System",
+            )
+        )
 
 
 @app.command()
 def track(
     app_id: str = typer.Argument(..., help="Application ID"),
-    action: str = typer.Argument(..., help="Action: response, interview, offer, rejected, withdrawn"),
-    note: Optional[str] = typer.Argument(None, help="Note or details"),
-):
+    action: str = typer.Argument(
+        ..., help="Action: response, interview, offer, rejected, withdrawn"
+    ),
+    note: str | None = typer.Argument(None, help="Note or details"),
+) -> None:
     """Update application status."""
     console.print(f"[blue]Tracking {app_id}:[/blue] {action}")
 
@@ -325,16 +332,17 @@ def track(
 # SYNC COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @app.command()
 def sync(
     platform: str = typer.Argument("all", help="Platform: all, resume, linkedin, github, website"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes without applying"),
-):
+) -> None:
     """Sync platforms from master profile."""
     console.print(f"[blue]Syncing:[/blue] {platform}")
 
     try:
-        from scripts.sync import PlatformSyncManager, Platform
+        from scripts.sync import Platform, PlatformSyncManager
 
         manager = PlatformSyncManager()
 
@@ -390,17 +398,18 @@ def sync(
 # PRESENCE COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @app.command()
 def prepare(
     job_id: str = typer.Argument(..., help="Job ID to prepare for"),
-):
+) -> None:
     """Prepare all platforms for a specific application."""
     console.print(f"[blue]Preparing for:[/blue] {job_id}")
 
     try:
-        from scripts.tailoring import ResumeTailor
-        from scripts.sync import PlatformSyncManager, Platform
         from scripts.linkedin import LinkedInContentManager
+        from scripts.sync import Platform, PlatformSyncManager
+        from scripts.tailoring import ResumeTailor
 
         # 1. Generate tailored resume
         console.print("\n[bold]1. Tailoring Resume[/bold]")
@@ -414,7 +423,12 @@ def prepare(
             with open(job_files[0]) as f:
                 job_analysis = json.load(f)
         else:
-            job_analysis = {"job_id": job_id, "company": "Unknown", "role": "Engineer", "keywords": []}
+            job_analysis = {
+                "job_id": job_id,
+                "company": "Unknown",
+                "role": "Engineer",
+                "keywords": [],
+            }
 
         variant = tailor.generate_variant(job_analysis)
         console.print(f"   [green]✅ Resume variant: {variant.variant_path}[/green]")
@@ -436,7 +450,9 @@ def prepare(
 
         for result in results:
             status_icon = "✅" if result.success else "⚠️"
-            console.print(f"   {status_icon} {result.platform.value}: {len(result.files_updated)} files")
+            console.print(
+                f"   {status_icon} {result.platform.value}: {len(result.files_updated)} files"
+            )
 
         console.print(f"\n[green]✅ Preparation complete for job {job_id}[/green]")
 
@@ -447,16 +463,12 @@ def prepare(
 @app.command()
 def presence(
     action: str = typer.Argument("report", help="Action: report, gaps, metrics"),
-):
+) -> None:
     """Audit digital presence."""
     console.print(f"[blue]Presence {action}[/blue]")
 
     try:
         if action == "report":
-            from scripts.sync import PlatformSyncManager
-
-            manager = PlatformSyncManager()
-
             # Generate presence report
             table = Table(title="Digital Presence Report")
             table.add_column("Platform", style="cyan")
@@ -497,7 +509,9 @@ def presence(
                 gaps.append("LinkedIn About section not synced")
             if not Path("github/profile/README.md").exists():
                 gaps.append("GitHub profile README not created")
-            if not Path("resume/exports").exists() or not list(Path("resume/exports").glob("*.pdf")):
+            if not Path("resume/exports").exists() or not list(
+                Path("resume/exports").glob("*.pdf")
+            ):
                 gaps.append("No exported resume PDFs found")
             if not Path("config/master_profile.yaml").exists():
                 gaps.append("Master profile not configured")
@@ -505,7 +519,7 @@ def presence(
             if gaps:
                 for gap in gaps:
                     console.print(f"  [yellow]⚠️ {gap}[/yellow]")
-                console.print(f"\n[dim]Run 'cps sync all' to address sync-related gaps[/dim]")
+                console.print("\n[dim]Run 'cps sync all' to address sync-related gaps[/dim]")
             else:
                 console.print("[green]✅ No major gaps detected[/green]")
 
@@ -526,7 +540,7 @@ def presence(
 
 
 @app.command()
-def validate():
+def validate() -> None:
     """Validate all configuration files."""
     console.print("[blue]Validating configuration files...[/blue]\n")
 
@@ -556,7 +570,7 @@ def validate():
         console.print(f"[red]Validation error: {e}[/red]")
 
 
-def main():
+def main() -> None:
     """Entry point for CLI."""
     app()
 

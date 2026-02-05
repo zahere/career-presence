@@ -12,10 +12,10 @@ Exports:
 
 from .application_submitter import (
     apply_to_job,
-    submit_application,
-    validate_submission,
     get_resume_variant,
     record_application,
+    submit_application,
+    validate_submission,
 )
 from .easy_apply_answers import AnswerResolver
 

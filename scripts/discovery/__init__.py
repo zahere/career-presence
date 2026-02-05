@@ -10,11 +10,12 @@ Exports:
 """
 
 from .job_searcher import (
-    search_jobs,
-    load_targets,
+    _merge_locale,
     apply_targets_filter,
     deduplicate_jobs,
+    load_targets,
     print_summary,
+    search_jobs,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "apply_targets_filter",
     "deduplicate_jobs",
     "print_summary",
+    "_merge_locale",
 ]

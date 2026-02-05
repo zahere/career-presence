@@ -181,3 +181,72 @@ bad_words:
 experience_range:
   min_years: 3
   max_years: 15
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Locale overrides
+# Region-specific config that gets merged with the base settings above.
+# Merge strategy: tiers=extend, bad_words=extend, locations=replace,
+#                 salary/country=replace, everything else=inherited
+# ═══════════════════════════════════════════════════════════════════════════
+locales:
+  israel:
+    search_params:
+      locations:
+        preferred:
+          - "Tel Aviv, Israel"
+          - "Herzliya, Israel"
+          - "Ramat Gan, Israel"
+        acceptable:
+          - "Haifa, Israel"
+          - "Petah Tikva, Israel"
+          - "Remote"
+      country: "Israel"
+      salary:
+        minimum_ils: 45000
+        currency: "ILS"
+
+    tiers:
+      tier1:
+        companies:
+          - name: "monday.com"
+            careers_url: "https://monday.com/careers"
+            priority: 1
+          - name: "Wix"
+            careers_url: "https://www.wix.com/jobs"
+            priority: 1
+          - name: "JFrog"
+            careers_url: "https://jfrog.com/careers"
+            priority: 1
+      tier2:
+        companies:
+          - name: "Tabnine"
+            careers_url: "https://www.tabnine.com/careers"
+            priority: 2
+          - name: "AI21 Labs"
+            careers_url: "https://www.ai21.com/careers"
+            priority: 2
+          - name: "Run:ai"
+            careers_url: "https://www.run.ai/careers"
+            priority: 2
+          - name: "Orca Security"
+            careers_url: "https://orca.security/careers"
+            priority: 2
+      tier3:
+        companies:
+          - name: "Snyk"
+            careers_url: "https://snyk.io/careers"
+            priority: 3
+          - name: "Lightricks"
+            careers_url: "https://www.lightricks.com/careers"
+            priority: 3
+          - name: "Fireblocks"
+            careers_url: "https://www.fireblocks.com/careers"
+            priority: 3
+          - name: "Gong"
+            careers_url: "https://www.gong.io/careers"
+            priority: 3
+
+    bad_words:
+      description_words:
+        - "dod clearance"
+        - "must be eligible for us security clearance"

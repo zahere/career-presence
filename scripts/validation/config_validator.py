@@ -5,12 +5,13 @@ Pydantic v2 models for validating targets.yaml and master_profile.yaml.
 Provides typed access and early error detection for all configuration.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field, model_validator
-
 
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
@@ -22,12 +23,12 @@ CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
 class CompanyEntry(BaseModel):
     name: str
-    careers_url: Optional[str] = None
-    greenhouse_id: Optional[str] = None
-    lever_id: Optional[str] = None
-    ashby_id: Optional[str] = None
+    careers_url: str | None = None
+    greenhouse_id: str | None = None
+    lever_id: str | None = None
+    ashby_id: str | None = None
     priority: int = 3
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class TierConfig(BaseModel):
@@ -37,7 +38,7 @@ class TierConfig(BaseModel):
 class ExclusionsConfig(BaseModel):
     companies: list[str] = Field(default_factory=list)
     keywords: list[str] = Field(default_factory=list)
-    reasons: Optional[dict[str, str]] = None
+    reasons: dict[str, str] | None = None
 
 
 class TargetRolesConfig(BaseModel):
@@ -61,6 +62,7 @@ class SearchParamsConfig(BaseModel):
     job_types: list[str] = Field(default_factory=list)
     posted_within: str = "7d"
     salary: SalaryConfig = Field(default_factory=SalaryConfig)
+    country: str = "USA"
 
 
 class BadWordsConfig(BaseModel):
@@ -74,15 +76,39 @@ class ExperienceRangeConfig(BaseModel):
     max_years: int = 50
 
 
+class LocaleSalaryConfig(BaseModel):
+    """Locale-specific salary config that may use non-USD fields."""
+
+    currency: str = "USD"
+    model_config = {"extra": "allow"}
+
+
+class LocaleSearchParamsConfig(BaseModel):
+    """Partial search params for locale overrides (all fields optional)."""
+
+    locations: LocationConfig | None = None
+    country: str | None = None
+    salary: LocaleSalaryConfig | None = None
+
+
+class LocaleConfig(BaseModel):
+    """Region-specific overrides merged into the base targets config."""
+
+    search_params: LocaleSearchParamsConfig | None = None
+    tiers: dict[str, TierConfig] = Field(default_factory=dict)
+    bad_words: BadWordsConfig | None = None
+
+
 class TargetsConfig(BaseModel):
     version: str = "1.0"
-    last_updated: Optional[str] = None
+    last_updated: str | None = None
     tiers: dict[str, TierConfig] = Field(default_factory=dict)
     exclusions: ExclusionsConfig = Field(default_factory=ExclusionsConfig)
     target_roles: TargetRolesConfig = Field(default_factory=TargetRolesConfig)
     search_params: SearchParamsConfig = Field(default_factory=SearchParamsConfig)
     bad_words: BadWordsConfig = Field(default_factory=BadWordsConfig)
     experience_range: ExperienceRangeConfig = Field(default_factory=ExperienceRangeConfig)
+    locales: dict[str, LocaleConfig] = Field(default_factory=dict)
 
     @model_validator(mode="before")
     @classmethod
@@ -103,7 +129,7 @@ class TargetsConfig(BaseModel):
             companies.extend(tier.companies)
         return companies
 
-    def get_company_tier(self, company_name: str) -> Optional[str]:
+    def get_company_tier(self, company_name: str) -> str | None:
         """Look up which tier a company belongs to."""
         name_lower = company_name.lower()
         for tier_name, tier in self.tiers.items():
@@ -153,8 +179,8 @@ class ExperienceEntry(BaseModel):
     role: str = ""
     type: str = ""
     location: str = ""
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
+    start_date: str | None = None
+    end_date: str | None = None
     short_description: str = ""
     bullets: list[dict[str, Any]] = Field(default_factory=list)
     technologies: list[str] = Field(default_factory=list)
@@ -194,7 +220,7 @@ class ApplicationAnswersConfig(BaseModel):
 
 class MasterProfileConfig(BaseModel):
     version: str = "1.0"
-    last_updated: Optional[str] = None
+    last_updated: str | None = None
     personal: PersonalConfig = Field(default_factory=PersonalConfig)
     summaries: dict[str, str] = Field(default_factory=dict)
     experience: list[ExperienceEntry] = Field(default_factory=list)
@@ -203,9 +229,7 @@ class MasterProfileConfig(BaseModel):
     education: list[dict[str, Any]] = Field(default_factory=list)
     content_strategy: dict[str, Any] = Field(default_factory=dict)
     sync: dict[str, Any] = Field(default_factory=dict)
-    application_answers: ApplicationAnswersConfig = Field(
-        default_factory=ApplicationAnswersConfig
-    )
+    application_answers: ApplicationAnswersConfig = Field(default_factory=ApplicationAnswersConfig)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -213,7 +237,7 @@ class MasterProfileConfig(BaseModel):
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-def load_validated_targets(path: Optional[Path] = None) -> TargetsConfig:
+def load_validated_targets(path: Path | None = None) -> TargetsConfig:
     """Load and validate targets.yaml, returning a typed TargetsConfig."""
     path = path or CONFIG_DIR / "targets.yaml"
     if not path.exists():
@@ -223,7 +247,7 @@ def load_validated_targets(path: Optional[Path] = None) -> TargetsConfig:
     return TargetsConfig.model_validate(raw)
 
 
-def load_validated_profile(path: Optional[Path] = None) -> MasterProfileConfig:
+def load_validated_profile(path: Path | None = None) -> MasterProfileConfig:
     """Load and validate master_profile.yaml, returning a typed MasterProfileConfig."""
     path = path or CONFIG_DIR / "master_profile.yaml"
     if not path.exists():
@@ -234,8 +258,8 @@ def load_validated_profile(path: Optional[Path] = None) -> MasterProfileConfig:
 
 
 def validate_all_configs(
-    targets_path: Optional[Path] = None,
-    profile_path: Optional[Path] = None,
+    targets_path: Path | None = None,
+    profile_path: Path | None = None,
 ) -> dict[str, Any]:
     """
     Validate all config files and return a summary.

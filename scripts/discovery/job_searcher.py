@@ -4,12 +4,14 @@ Job Search Script using python-jobspy
 Multi-platform job discovery: LinkedIn, Indeed, Glassdoor, ZipRecruiter
 """
 
+from __future__ import annotations
+
 import argparse
+import copy
 import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from jobspy import scrape_jobs
@@ -18,21 +20,102 @@ from jobspy import scrape_jobs
 CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
 
-def load_targets() -> dict:
+def _merge_locale(base: dict, overrides: dict) -> dict:
+    """
+    Merge locale-specific overrides into a base targets config.
+
+    Merge strategy:
+    - tiers: extend (append locale companies to base tier lists)
+    - bad_words: extend (append locale words, deduplicate)
+    - locations: replace (locale provides its own location lists)
+    - salary/country: replace (locale value wins)
+    - Everything else (target_roles, experience_range): inherited from base
+
+    Args:
+        base: Base targets dict (without the ``locales`` key).
+        overrides: Locale-specific overrides dict.
+
+    Returns:
+        New merged dict. *base* is never mutated.
+    """
+    merged = copy.deepcopy(base)
+
+    # --- tiers: extend ---
+    locale_tiers = overrides.get("tiers", {})
+    for tier_name, tier_data in locale_tiers.items():
+        locale_companies = tier_data.get("companies", [])
+        if tier_name in merged.get("tiers", {}):
+            merged["tiers"][tier_name]["companies"] = (
+                merged["tiers"][tier_name].get("companies", []) + locale_companies
+            )
+        else:
+            merged.setdefault("tiers", {})[tier_name] = {"companies": locale_companies}
+
+    # --- bad_words: extend + deduplicate ---
+    locale_bw = overrides.get("bad_words", {})
+    for key in ("title_words", "description_words"):
+        if key in locale_bw:
+            existing = merged.get("bad_words", {}).get(key, [])
+            combined = existing + locale_bw[key]
+            # Deduplicate preserving order
+            seen: set[str] = set()
+            deduped: list[str] = []
+            for w in combined:
+                low = w.lower()
+                if low not in seen:
+                    seen.add(low)
+                    deduped.append(w)
+            merged.setdefault("bad_words", {})[key] = deduped
+
+    # --- search_params: locations=replace, salary=replace, country=replace ---
+    locale_sp = overrides.get("search_params", {})
+    if "locations" in locale_sp:
+        merged.setdefault("search_params", {})["locations"] = locale_sp["locations"]
+    if "salary" in locale_sp:
+        merged.setdefault("search_params", {})["salary"] = locale_sp["salary"]
+    if "country" in locale_sp:
+        merged.setdefault("search_params", {})["country"] = locale_sp["country"]
+
+    return merged
+
+
+def load_targets(locale: str | None = None) -> dict:
     """
     Load target companies and search parameters from config.
 
+    Args:
+        locale: Optional locale name (e.g. ``"israel"``). When provided,
+                the matching ``locales.<name>`` section is merged into the
+                base config using :func:`_merge_locale`.
+
     Returns:
-        Dictionary with target companies and search configuration
+        Dictionary with target companies and search configuration.
+
+    Raises:
+        ValueError: If *locale* is specified but not found in config.
     """
     targets_path = CONFIG_DIR / "targets.yaml"
-    if targets_path.exists():
-        with open(targets_path) as f:
-            return yaml.safe_load(f)
-    return {}
+    if not targets_path.exists():
+        return {}
+
+    with open(targets_path) as f:
+        raw = yaml.safe_load(f) or {}
+
+    # Pop locales section out — callers never see it in the merged dict
+    locales = raw.pop("locales", {})
+
+    if locale is None:
+        return raw
+
+    if locale not in locales:
+        raise ValueError(
+            f"Unknown locale '{locale}'. Available locales: {', '.join(locales) or '(none)'}"
+        )
+
+    return _merge_locale(raw, locales[locale])
 
 
-def _extract_experience_years(text: str) -> Optional[int]:
+def _extract_experience_years(text: str) -> int | None:
     """
     Extract required years of experience from job text.
 
@@ -131,11 +214,14 @@ def apply_targets_filter(jobs: list[dict], targets: dict) -> list[dict]:
             continue
 
         # Add tier info
-        tier_info = company_tiers.get(company, {
-            "tier": "unknown",
-            "priority": 4,
-            "auto_apply": False,
-        })
+        tier_info = company_tiers.get(
+            company,
+            {
+                "tier": "unknown",
+                "priority": 4,
+                "auto_apply": False,
+            },
+        )
         job["target_tier"] = tier_info["tier"]
         job["target_priority"] = tier_info["priority"]
         job["auto_apply_eligible"] = tier_info["auto_apply"]
@@ -239,6 +325,7 @@ def search_jobs(
     country: str = "USA",
     is_remote: bool = True,
     output_format: str = "both",
+    locale: str | None = None,
 ) -> dict:
     """
     Search for jobs across multiple platforms.
@@ -252,12 +339,26 @@ def search_jobs(
         country: Country code for job search
         is_remote: Filter for remote jobs only
         output_format: "json", "csv", or "both"
+        locale: Optional locale name (e.g. "israel") for region-specific config
 
     Returns:
         Dictionary with search results and metadata
     """
     if sites is None:
         sites = ["linkedin", "indeed", "glassdoor"]
+
+    # Apply locale overrides for location/country when caller used defaults
+    if locale:
+        targets_for_defaults = load_targets(locale=locale)
+        sp = targets_for_defaults.get("search_params", {})
+        if location == "remote":
+            preferred = sp.get("locations", {}).get("preferred", [])
+            if preferred:
+                location = preferred[0]
+        if country == "USA":
+            country = sp.get("country", country)
+        if locale:
+            print(f"  Locale: {locale}")
 
     print(f"Searching for '{search_term}' jobs...")
     print(f"  Location: {location}")
@@ -297,7 +398,7 @@ def search_jobs(
     jobs_list = deduplicate_jobs(jobs_list)
 
     # Apply targets configuration (tier info, priority, exclusions)
-    targets = load_targets()
+    targets = load_targets(locale=locale)
     if targets:
         original_count = len(jobs_list)
         jobs_list = apply_targets_filter(jobs_list, targets)
@@ -306,7 +407,7 @@ def search_jobs(
             print(f"Filtered {filtered_count} jobs based on exclusions")
 
         # Count by tier
-        tier_counts = {}
+        tier_counts: dict[str, int] = {}
         for job in jobs_list:
             tier = job.get("target_tier", "unknown")
             tier_counts[tier] = tier_counts.get(tier, 0) + 1
@@ -317,7 +418,6 @@ def search_jobs(
         from scripts.tracking import ApplicationTracker
 
         tracker = ApplicationTracker()
-        pre_dedup = len(jobs_list)
         jobs_list, already_applied = tracker.filter_already_applied(jobs_list)
         if already_applied:
             print(f"Filtered {len(already_applied)} already-applied jobs (DB dedup)")
@@ -362,9 +462,9 @@ def print_summary(result: dict) -> None:
         return
 
     jobs = result.get("jobs", [])
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"Found {len(jobs)} jobs for '{result.get('search_term', 'N/A')}'")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     for i, job in enumerate(jobs[:15], 1):  # Show top 15
         title = job.get("title", "N/A")
@@ -390,7 +490,7 @@ def print_summary(result: dict) -> None:
         print(f"... and {len(jobs) - 15} more jobs (see saved files)")
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         description="Search for jobs across multiple platforms",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -409,31 +509,36 @@ Examples:
         help="Job title or keywords to search (default: 'AI Engineer')",
     )
     parser.add_argument(
-        "-l", "--location",
+        "-l",
+        "--location",
         default="remote",
         help="Location filter (default: 'remote')",
     )
     parser.add_argument(
-        "-s", "--sites",
+        "-s",
+        "--sites",
         nargs="+",
         choices=["linkedin", "indeed", "glassdoor", "zip_recruiter"],
         default=["linkedin", "indeed", "glassdoor"],
         help="Sites to search (default: linkedin indeed glassdoor)",
     )
     parser.add_argument(
-        "-r", "--results",
+        "-r",
+        "--results",
         type=int,
         default=25,
         help="Number of results wanted per site (default: 25)",
     )
     parser.add_argument(
-        "-t", "--hours",
+        "-t",
+        "--hours",
         type=int,
         default=72,
         help="Only jobs posted within this many hours (default: 72)",
     )
     parser.add_argument(
-        "-c", "--country",
+        "-c",
+        "--country",
         default="USA",
         help="Country for job search (default: USA)",
     )
@@ -443,13 +548,20 @@ Examples:
         help="Include on-site jobs (default: remote only)",
     )
     parser.add_argument(
-        "-f", "--format",
+        "--locale",
+        default=None,
+        help="Locale for region-specific config (e.g., 'israel')",
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
         choices=["json", "csv", "both"],
         default="both",
         help="Output format (default: both)",
     )
     parser.add_argument(
-        "-q", "--quiet",
+        "-q",
+        "--quiet",
         action="store_true",
         help="Minimal output (no summary)",
     )
@@ -465,6 +577,7 @@ Examples:
         country=args.country,
         is_remote=not args.include_onsite,
         output_format=args.format,
+        locale=args.locale,
     )
 
     if not args.quiet:
