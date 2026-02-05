@@ -14,9 +14,12 @@ A comprehensive career management platform that orchestrates job discovery, resu
 
 ### Job Search Pipeline
 - **Multi-Platform Discovery** — Search LinkedIn, Indeed, Glassdoor, Google Jobs simultaneously via MCP
+- **Intelligent Filtering** — Bad word penalties, experience range validation, applied-jobs deduplication
 - **Intelligent Analysis** — Extract keywords, parse requirements, calculate match scores
 - **ATS-Optimized Tailoring** — Generate role-specific resume variants with LaTeX
+- **Easy Apply Answers** — Auto-answer common application questions from your profile
 - **Application Tracking** — SQLite-based lifecycle management with follow-up reminders
+- **Config Validation** — Pydantic v2 models for type-safe configuration
 
 ### Digital Presence Management
 - **Single Source of Truth** — All content flows from `master_profile.yaml`
@@ -134,6 +137,13 @@ cps ats-score resume.pdf --job-description job.txt
 cps apply JOB_ID --confirm
 ```
 
+### Configuration
+
+```bash
+# Validate all config files
+cps validate
+```
+
 ### Application Tracking
 
 ```bash
@@ -178,9 +188,11 @@ career-presence/
 ├── scripts/
 │   ├── cli.py               # Main CLI entry point
 │   ├── analysis/            # Job analysis, ATS scoring
-│   ├── discovery/           # Job search integration
+│   ├── discovery/           # Job search, bad word filter, exp range
+│   ├── submission/          # Application submission, Easy Apply answers
 │   ├── tailoring/           # Resume generation
-│   ├── tracking/            # Application tracking
+│   ├── tracking/            # Application tracking, deduplication
+│   ├── validation/          # Pydantic config validation
 │   ├── sync/                # Platform synchronization
 │   └── ...
 ├── mcp-servers/
@@ -272,6 +284,14 @@ skills:
       skills:
         - name: "Skill"
           proficiency: "expert"
+
+application_answers:
+  work_authorization: "Yes"
+  visa_sponsorship: "No"
+  years_of_experience: "5"
+  salary_expectation: "150000"
+  custom_answers:
+    "How did you hear about us?": "LinkedIn"
 ```
 
 ### credentials.env

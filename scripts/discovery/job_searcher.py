@@ -6,6 +6,7 @@ Multi-platform job discovery: LinkedIn, Indeed, Glassdoor, ZipRecruiter
 
 import argparse
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -31,6 +32,37 @@ def load_targets() -> dict:
     return {}
 
 
+def _extract_experience_years(text: str) -> Optional[int]:
+    """
+    Extract required years of experience from job text.
+
+    Looks for patterns like "5+ years", "3-5 years of experience",
+    "minimum 7 years", etc.
+
+    Returns the primary number found, or None if no match.
+    """
+    if not text:
+        return None
+
+    patterns = [
+        # Range pattern first: "3-5 years" → captures the lower bound (3)
+        r"(\d+)\s*-\s*\d+\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience|exp)",
+        r"(?:minimum|at least|min)\s*(\d+)\s*(?:years?|yrs?)",
+        r"(\d+)\+?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience|exp)",
+        r"(\d+)\s*(?:years?|yrs?)\s*(?:of\s+)?(?:professional|relevant|hands-on|industry)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            try:
+                return int(match.group(1))
+            except (ValueError, IndexError):
+                continue
+
+    return None
+
+
 def apply_targets_filter(jobs: list[dict], targets: dict) -> list[dict]:
     """
     Apply targets configuration to job list.
@@ -39,6 +71,8 @@ def apply_targets_filter(jobs: list[dict], targets: dict) -> list[dict]:
     - Adds priority score
     - Adds auto_apply eligibility
     - Filters out exclusions
+    - Applies bad word penalties (soft filter)
+    - Checks experience range match
 
     Args:
         jobs: List of job dictionaries
@@ -73,13 +107,24 @@ def apply_targets_filter(jobs: list[dict], targets: dict) -> list[dict]:
     primary_roles = [r.lower() for r in target_roles.get("primary", [])]
     secondary_roles = [r.lower() for r in target_roles.get("secondary", [])]
 
+    # Get bad words config
+    bad_words_config = targets.get("bad_words", {})
+    bad_title_words = [w.lower() for w in bad_words_config.get("title_words", [])]
+    bad_desc_words = [w.lower() for w in bad_words_config.get("description_words", [])]
+    penalty_per_match = bad_words_config.get("penalty_per_match", 5.0)
+
+    # Get experience range config
+    exp_range = targets.get("experience_range", {})
+    exp_min = exp_range.get("min_years", 0)
+    exp_max = exp_range.get("max_years", 50)
+
     enriched_jobs = []
     for job in jobs:
         company = (job.get("company") or "").lower()
         title = (job.get("title") or "").lower()
         description = (job.get("description") or "").lower()
 
-        # Check exclusions
+        # Check exclusions (hard filter)
         if company in excluded_companies:
             continue
         if any(kw in title or kw in description for kw in excluded_keywords):
@@ -105,10 +150,48 @@ def apply_targets_filter(jobs: list[dict], targets: dict) -> list[dict]:
         else:
             job["role_match"] = "other"
 
+        # Bad word penalty scoring (soft filter)
+        bad_word_penalty = 0.0
+        matched_bad_words = []
+
+        for word in bad_title_words:
+            if word in title:
+                bad_word_penalty += penalty_per_match
+                matched_bad_words.append(f"title:{word}")
+
+        for word in bad_desc_words:
+            if word in description:
+                bad_word_penalty += penalty_per_match
+                matched_bad_words.append(f"desc:{word}")
+
+        job["bad_word_penalty"] = bad_word_penalty
+        job["bad_words_matched"] = matched_bad_words
+
+        # Experience range check
+        required_years = _extract_experience_years(description) or _extract_experience_years(title)
+        if required_years is not None:
+            job["required_experience_years"] = required_years
+            if exp_min <= required_years <= exp_max:
+                job["experience_match"] = "in_range"
+            elif required_years < exp_min:
+                job["experience_match"] = "under_qualified"
+                job["bad_word_penalty"] = job.get("bad_word_penalty", 0) + penalty_per_match
+            else:
+                job["experience_match"] = "over_qualified"
+                job["bad_word_penalty"] = job.get("bad_word_penalty", 0) + penalty_per_match
+        else:
+            job["experience_match"] = "unknown"
+
         enriched_jobs.append(job)
 
-    # Sort by priority (lower is better)
-    enriched_jobs.sort(key=lambda j: (j.get("target_priority", 4), j.get("target_tier", "z")))
+    # Sort by priority (lower is better), then by penalty (lower is better)
+    enriched_jobs.sort(
+        key=lambda j: (
+            j.get("target_priority", 4),
+            j.get("bad_word_penalty", 0),
+            j.get("target_tier", "z"),
+        )
+    )
 
     return enriched_jobs
 
@@ -228,6 +311,19 @@ def search_jobs(
             tier = job.get("target_tier", "unknown")
             tier_counts[tier] = tier_counts.get(tier, 0) + 1
         print(f"Jobs by tier: {tier_counts}")
+
+    # Filter out already-applied jobs via DB lookup
+    try:
+        from scripts.tracking import ApplicationTracker
+
+        tracker = ApplicationTracker()
+        pre_dedup = len(jobs_list)
+        jobs_list, already_applied = tracker.filter_already_applied(jobs_list)
+        if already_applied:
+            print(f"Filtered {len(already_applied)} already-applied jobs (DB dedup)")
+    except Exception as e:
+        # Non-fatal: continue without DB dedup if tracker is unavailable
+        print(f"Note: DB dedup skipped ({e})")
 
     result = {
         "search_term": search_term,

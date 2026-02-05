@@ -85,9 +85,24 @@ def validate_submission(job: dict, resume_path: Path) -> dict:
     if match_score < 70:
         errors.append(f"Match score too low: {match_score}% (minimum 70%)")
 
-    # Check not already applied
-    if job.get("status") == "applied":
-        errors.append("Already applied to this position")
+    # Check not already applied (DB lookup)
+    try:
+        from scripts.tracking import ApplicationTracker
+
+        tracker = ApplicationTracker()
+        company = job.get("company", "")
+        role = job.get("title") or job.get("role", "")
+        job_url = job.get("job_url") or job.get("url")
+        existing = tracker.is_already_applied(company, role, job_url)
+        if existing:
+            errors.append(
+                f"Already applied to this position "
+                f"(id={existing['id']}, status={existing['status']})"
+            )
+    except Exception:
+        # Fall back to simple status check if tracker unavailable
+        if job.get("status") == "applied":
+            errors.append("Already applied to this position")
 
     return {
         "valid": len(errors) == 0,
@@ -302,7 +317,89 @@ def _fill_application_form(page: "Page", form_data: dict) -> List[str]:
             except Exception:
                 continue
 
+    # Second pass: use AnswerResolver for remaining unfilled fields
+    try:
+        from scripts.submission.easy_apply_answers import AnswerResolver
+
+        resolver = AnswerResolver.from_profile()
+        unfilled = _extract_unfilled_labels(page, filled)
+
+        for label_text, element_info in unfilled:
+            resolved = resolver.resolve(
+                question=label_text,
+                field_type=element_info.get("type", "text"),
+                options=element_info.get("options"),
+            )
+            if resolved and resolved.confidence >= 0.7:
+                try:
+                    el = element_info.get("element")
+                    if el and el.is_visible():
+                        if resolved.field_type in ("dropdown", "select"):
+                            el.select_option(label=resolved.answer)
+                        else:
+                            el.fill(resolved.answer)
+                        filled.append(f"auto:{label_text[:30]}")
+                except Exception:
+                    continue
+    except ImportError:
+        pass  # AnswerResolver not available
+
     return filled
+
+
+def _extract_unfilled_labels(
+    page: "Page", already_filled: List[str]
+) -> List[tuple[str, Dict[str, Any]]]:
+    """
+    Extract labels and their associated input elements for unfilled fields.
+
+    Returns list of (label_text, {"element": locator, "type": str, "options": list|None})
+    """
+    results = []
+
+    try:
+        # Find all label elements
+        labels = page.locator("label").all()
+        for label in labels:
+            try:
+                label_text = label.inner_text().strip()
+                if not label_text or len(label_text) > 200:
+                    continue
+
+                # Skip if this field was already filled
+                if any(f.lower() in label_text.lower() for f in already_filled):
+                    continue
+
+                # Find associated input
+                for_attr = label.get_attribute("for")
+                if for_attr:
+                    input_el = page.locator(f"#{for_attr}").first
+                else:
+                    input_el = label.locator("input, select, textarea").first
+
+                if not input_el or not input_el.is_visible():
+                    continue
+
+                tag = input_el.evaluate("el => el.tagName.toLowerCase()")
+                input_type = input_el.get_attribute("type") or "text"
+
+                element_info: Dict[str, Any] = {"element": input_el, "type": input_type}
+
+                if tag == "select":
+                    element_info["type"] = "dropdown"
+                    option_els = input_el.locator("option").all()
+                    element_info["options"] = [
+                        o.inner_text().strip() for o in option_els
+                        if o.inner_text().strip()
+                    ]
+
+                results.append((label_text, element_info))
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    return results
 
 
 def _upload_resume(page: "Page", resume_path: str) -> bool:

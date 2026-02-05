@@ -98,6 +98,7 @@ class ApplicationTracker:
     CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     CREATE INDEX IF NOT EXISTS idx_applications_company ON applications(company);
     CREATE INDEX IF NOT EXISTS idx_interactions_app_id ON interactions(application_id);
+    CREATE INDEX IF NOT EXISTS idx_applications_job_url ON applications(job_url);
     """
     
     STATUS_FLOW = [
@@ -133,6 +134,82 @@ class ApplicationTracker:
         finally:
             conn.close()
     
+    def is_already_applied(
+        self,
+        company: str,
+        role: str,
+        job_url: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Check if we've already applied to this job.
+
+        Checks by job_url first (exact match), then by company+role (fuzzy).
+        Ignores applications that are only in 'discovered' status.
+
+        Returns:
+            The existing application dict if found, None otherwise.
+        """
+        with self._get_connection() as conn:
+            # Check by URL first (most reliable)
+            if job_url:
+                row = conn.execute(
+                    """
+                    SELECT * FROM applications
+                    WHERE job_url = ? AND status != 'discovered'
+                    LIMIT 1
+                    """,
+                    (job_url,),
+                ).fetchone()
+                if row:
+                    return self._row_to_dict(row)
+
+            # Check by company + role (case-insensitive)
+            if company and role:
+                row = conn.execute(
+                    """
+                    SELECT * FROM applications
+                    WHERE LOWER(company) = LOWER(?) AND LOWER(role) = LOWER(?)
+                    AND status != 'discovered'
+                    LIMIT 1
+                    """,
+                    (company, role),
+                ).fetchone()
+                if row:
+                    return self._row_to_dict(row)
+
+        return None
+
+    def filter_already_applied(
+        self, jobs: List[Dict[str, Any]]
+    ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """
+        Partition a job list into new and already-applied jobs.
+
+        Args:
+            jobs: List of job dicts (must have 'company', 'title'/'role', optional 'job_url')
+
+        Returns:
+            Tuple of (new_jobs, already_applied)
+        """
+        new_jobs = []
+        already_applied = []
+
+        for job in jobs:
+            company = job.get("company", "")
+            role = job.get("title") or job.get("role", "")
+            job_url = job.get("job_url") or job.get("url")
+
+            existing = self.is_already_applied(company, role, job_url)
+            if existing:
+                job["already_applied"] = True
+                job["existing_application_id"] = existing.get("id")
+                job["existing_status"] = existing.get("status")
+                already_applied.append(job)
+            else:
+                new_jobs.append(job)
+
+        return new_jobs, already_applied
+
     def add_application(self, app: Application) -> bool:
         """Add a new application"""
         with self._get_connection() as conn:

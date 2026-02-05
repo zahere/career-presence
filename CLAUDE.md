@@ -92,7 +92,8 @@ career-presence/
 │
 ├── config/
 │   ├── master_profile.yaml           # ⭐ SINGLE SOURCE OF TRUTH
-│   ├── targets.yaml                  # Target companies, whitelist
+│   ├── master_profile.yaml.example   # Template with application_answers
+│   ├── targets.yaml                  # Target companies, bad_words, experience_range
 │   ├── credentials.env               # API keys (gitignored)
 │   └── credentials.env.example       # Template for credentials
 │
@@ -151,17 +152,20 @@ career-presence/
 │   │   ├── ats_scorer.py
 │   │   └── job_analyzer.py
 │   ├── discovery/
-│   │   └── job_searcher.py          # renamed from search_jobs.py
+│   │   └── job_searcher.py          # Bad word filtering, exp range, DB dedup
 │   ├── linkedin/
-│   │   └── linkedin_manager.py      # renamed + merged from content_manager.py
+│   │   └── linkedin_manager.py
 │   ├── submission/
-│   │   └── application_submitter.py
+│   │   ├── application_submitter.py # DB dedup validation, answer resolver
+│   │   └── easy_apply_answers.py    # Easy Apply question answering
 │   ├── sync/
-│   │   └── sync_manager.py          # renamed from platform_sync.py
+│   │   └── sync_manager.py
 │   ├── tailoring/
 │   │   └── resume_tailor.py
 │   ├── tracking/
-│   │   └── tracker.py
+│   │   └── tracker.py               # is_already_applied, filter_already_applied
+│   ├── validation/
+│   │   └── config_validator.py      # Pydantic config models
 │   └── website/
 │       └── generator.py
 │
@@ -173,7 +177,11 @@ career-presence/
 │   └── agenticraft_overview.md
 │
 ├── tests/                            # Test suite
-│   └── test_ats_scorer.py
+│   ├── test_ats_scorer.py
+│   ├── test_config_validator.py
+│   ├── test_bad_word_filter.py
+│   ├── test_deduplication.py
+│   └── test_easy_apply_answers.py
 │
 └── docs/                             # Reference documents
     ├── PROJECT_PLAN.md
@@ -272,6 +280,17 @@ target_companies:
   tier1: ["Anthropic", "OpenAI", "Google DeepMind", "Meta AI"]
   tier2: ["Databricks", "Scale AI", "Cohere", "Hugging Face"]
   tier3: ["AI startups with >$10M funding"]
+
+application_answers:
+  work_authorization: "Yes"
+  visa_sponsorship: "No"
+  years_of_experience: "5"
+  education_level: "Bachelor's Degree"
+  salary_expectation: "150000"
+  start_date: "Immediately"
+  willing_to_relocate: "Yes"
+  custom_answers:
+    "How did you hear about us?": "LinkedIn"
 ```
 
 ---
@@ -298,7 +317,14 @@ params:
 - Ashby API: `api.ashbyhq.com/posting-api/job-board/{company}`
 
 #### Deduplication
-Match by: `job_url` OR `(company + role + location)`
+- **In-memory**: Match by `job_url` OR `(company + role + location)`
+- **Database**: Filter jobs already in `applications.db` (status != 'discovered') via `tracker.filter_already_applied()`
+
+#### Bad Word Filtering (Soft Penalty)
+Configured in `targets.yaml` under `bad_words`. Title/description matches add a penalty score (default 5 points per match) but do not hard-exclude jobs. Jobs are sorted by penalty ascending.
+
+#### Experience Range Filtering
+Configured in `targets.yaml` under `experience_range`. Extracts required years from job text and flags jobs outside the configured min/max range with an additional penalty.
 
 ### Phase 2: Job Evaluation
 
@@ -454,14 +480,17 @@ tier3:  # Requires confirmation
 1. ✅ Resume variant exists and is valid PDF
 2. ✅ ATS score ≥ 80%
 3. ✅ Match score ≥ 70%
-4. ✅ Not already applied to this role
+4. ✅ Not already applied to this role (DB lookup via `tracker.is_already_applied()`)
 5. ✅ Company not in exclusion list
 6. ✅ Human confirmation received (unless whitelisted + ATS ≥ 85%)
+
+#### Easy Apply Question Answering
+Common application questions (work authorization, visa, experience, salary, etc.) are auto-answered from `application_answers` in `master_profile.yaml`. Custom question-answer pairs can be added under `custom_answers`. See `scripts/submission/easy_apply_answers.py`.
 
 #### Human Confirmation Required For
 - Non-whitelisted companies
 - ATS score < 85%
-- Jobs with custom questions
+- Jobs with custom questions not in `application_answers`
 - First application of the day (sanity check)
 
 ### Phase 6: Tracking & Follow-up
@@ -617,6 +646,11 @@ Example: "Building AgentiCraft | AI Infrastructure Engineer | Multi-Agent System
 /presence report            # Full digital presence audit
 /presence gaps              # Identify weak areas
 /presence metrics           # Show engagement metrics
+```
+
+### Configuration
+```
+/validate                   # Validate all config files (targets.yaml, master_profile.yaml)
 ```
 
 ### Maintenance
@@ -840,6 +874,9 @@ cp config/credentials.env.example config/credentials.env
 
 # Sync Operations
 /sync all|[platform]|pull [platform]
+
+# Config
+/validate
 
 # Presence
 /prepare [job_id]

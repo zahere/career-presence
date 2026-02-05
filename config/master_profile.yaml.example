@@ -278,3 +278,21 @@ sync:
       auto_sync: true
       sections_to_sync:
         - "all"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# APPLICATION ANSWERS
+# Pre-configured answers for common Easy Apply / job application questions
+# ═══════════════════════════════════════════════════════════════════════════
+application_answers:
+  work_authorization: "Yes"
+  visa_sponsorship: "No"
+  years_of_experience: "5"
+  education_level: "Bachelor's Degree"
+  salary_expectation: "150000"
+  start_date: "Immediately"
+  willing_to_relocate: "Yes"
+
+  # Custom question-answer pairs (matched by substring)
+  custom_answers:
+    "How did you hear about us?": "LinkedIn"
+    "Are you comfortable working in a remote environment?": "Yes"

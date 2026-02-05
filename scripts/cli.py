@@ -525,6 +525,37 @@ def presence(
         console.print(f"[red]Presence audit error: {e}[/red]")
 
 
+@app.command()
+def validate():
+    """Validate all configuration files."""
+    console.print("[blue]Validating configuration files...[/blue]\n")
+
+    try:
+        from scripts.validation import validate_all_configs
+
+        result = validate_all_configs()
+
+        if result["errors"]:
+            console.print("[red bold]Errors:[/red bold]")
+            for error in result["errors"]:
+                console.print(f"  [red]✗[/red] {error}")
+            console.print()
+
+        if result["warnings"]:
+            console.print("[yellow bold]Warnings:[/yellow bold]")
+            for warning in result["warnings"]:
+                console.print(f"  [yellow]⚠[/yellow] {warning}")
+            console.print()
+
+        if result["valid"]:
+            console.print("[green]✅ All configs valid[/green]")
+        else:
+            console.print("[red]❌ Config validation failed[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Validation error: {e}[/red]")
+
+
 def main():
     """Entry point for CLI."""
     app()

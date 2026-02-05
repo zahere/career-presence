@@ -14,9 +14,12 @@ Career Presence uses a multi-agent pattern where Claude Code orchestrates specia
 - Fetch jobs from Greenhouse/Lever/Ashby APIs
 - Scrape company career pages
 - Initial match scoring against master profile
+- Bad word penalty filtering (soft filter from `targets.yaml`)
+- Experience range validation (flags under/over-qualified jobs)
+- Applied-jobs deduplication via DB lookup (`tracker.filter_already_applied()`)
 
 **Input**: Search criteria (roles, locations, companies, filters)
-**Output**: List of job candidates with preliminary scores
+**Output**: List of job candidates with preliminary scores, penalties, and dedup status
 
 **Module**: `scripts/discovery/job_searcher.py`
 
@@ -72,11 +75,15 @@ Career Presence uses a multi-agent pattern where Claude Code orchestrates specia
 - Upload documents
 - Handle multi-step applications
 - Capture confirmation screenshots
+- Auto-answer Easy Apply questions from `application_answers` in master profile
+- DB-based deduplication check before submission (`tracker.is_already_applied()`)
 
 **Input**: Job URL + resume + profile data
 **Output**: Application confirmation
 
-**Module**: `scripts/submission/application_submitter.py`
+**Modules**:
+- `scripts/submission/application_submitter.py`
+- `scripts/submission/easy_apply_answers.py`
 
 ### 6. Tracking Agent
 **Purpose**: Manage application lifecycle
@@ -87,9 +94,10 @@ Career Presence uses a multi-agent pattern where Claude Code orchestrates specia
 - Generate analytics and reports
 - Schedule follow-ups
 - Track response rates
+- Deduplication queries: `is_already_applied(company, role, url)` and `filter_already_applied(jobs)`
 
 **Input**: Application events
-**Output**: Status updates, reports
+**Output**: Status updates, reports, dedup results
 
 **Module**: `scripts/tracking/tracker.py`
 
@@ -135,13 +143,28 @@ Career Presence uses a multi-agent pattern where Claude Code orchestrates specia
 
 **Module**: `scripts/linkedin/linkedin_manager.py`
 
+### 10. Validation Agent
+**Purpose**: Validate all configuration files
+
+**Capabilities**:
+- Pydantic v2 validation of `targets.yaml` and `master_profile.yaml`
+- Type-safe config access via `TargetsConfig` and `MasterProfileConfig` models
+- Report errors and warnings for missing or invalid configuration
+- Validate `bad_words`, `experience_range`, and `application_answers` sections
+
+**Input**: Config file paths
+**Output**: Validation report with errors and warnings
+
+**Module**: `scripts/validation/config_validator.py`
+**CLI**: `cps validate`
+
 ---
 
 ## Coordination Patterns
 
 ### Sequential Pipeline (Job Application)
 ```
-Discovery → Analysis → Tailoring → ATS Score → [Human Review] → Submission → Tracking
+Discovery → Bad Word/Exp Filter → DB Dedup → Analysis → Tailoring → ATS Score → [Human Review] → Submission (w/ Easy Apply Answers) → Tracking
 ```
 Standard flow for each job application.
 

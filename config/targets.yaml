@@ -150,3 +150,34 @@ search_params:
   salary:
     minimum_usd: 150000
     currency: "USD"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Bad word filtering (soft penalty, not hard exclusion)
+# Matches are case-insensitive. Each match reduces the job's priority score.
+# ═══════════════════════════════════════════════════════════════════════════
+bad_words:
+  title_words:
+    - "junior"
+    - "entry level"
+    - "entry-level"
+    - "director"
+    - "vp"
+    - "vice president"
+    - "manager"
+    - "head of"
+    - "chief"
+    - "intern"
+  description_words:
+    - "security clearance required"
+    - "us citizen only"
+    - "must be a us citizen"
+    - "top secret clearance"
+  penalty_per_match: 5.0  # Points subtracted from match score per bad word
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Experience range filter
+# Jobs requiring experience outside this range get a penalty
+# ═══════════════════════════════════════════════════════════════════════════
+experience_range:
+  min_years: 3
+  max_years: 15

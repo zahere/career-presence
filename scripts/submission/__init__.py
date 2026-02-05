@@ -7,6 +7,7 @@ Exports:
     validate_submission: Validate submission requirements before applying
     get_resume_variant: Get the resume variant for a specific job
     record_application: Save application record
+    AnswerResolver: Resolves Easy Apply questions from master profile
 """
 
 from .application_submitter import (
@@ -16,6 +17,7 @@ from .application_submitter import (
     get_resume_variant,
     record_application,
 )
+from .easy_apply_answers import AnswerResolver
 
 __all__ = [
     "apply_to_job",
@@ -23,4 +25,5 @@ __all__ = [
     "validate_submission",
     "get_resume_variant",
     "record_application",
+    "AnswerResolver",
 ]
