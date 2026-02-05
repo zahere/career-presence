@@ -205,10 +205,10 @@ class PlatformSyncManager:
 **Alternative Options:**
 
 1. **Builder Focus:**
-   Building AgentiCraft | AI Infrastructure Engineer | Multi-Agent Systems Expert
+   Building [Project] | [Role Title] | [Specialty]
 
 2. **Achievement Focus:**
-   AI Infrastructure Engineer | Built 500K+ LOC Multi-Agent Platform | Open to Opportunities
+   [Role Title] | Built [Key Achievement] | Open to Opportunities
 
 3. **Value Proposition:**
    I build AI systems that work in production | Multi-Agent Orchestration | MLOps

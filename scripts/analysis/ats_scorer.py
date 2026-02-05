@@ -499,25 +499,25 @@ def main() -> None:
 
     # Example resume text (would normally extract from PDF)
     resume_text = """
-    ZAHER KHATEEB
-    AI Infrastructure Engineer • Multi-Agent Systems Architect
+    JANE DOE
+    Senior Software Engineer • Backend Systems
 
     Professional Summary
-    AI Infrastructure Engineer specializing in production-grade multi-agent systems
-    and enterprise AI platforms. Architected AgentiCraft, an enterprise platform with
-    116 composable patterns and 27 integrated services.
+    Senior Software Engineer with 7 years of experience building scalable
+    distributed systems and cloud-native applications. Led development of
+    a real-time data pipeline processing 2M+ events per day.
 
     Experience
 
-    AgentiCraft — Creator & Lead Architect (Oct 2024 - Present)
-    • Architected enterprise agent platform with 116 composable patterns spanning
-      cognitive reasoning (CoT, ReAct), multi-agent coordination, and workflow orchestration
-    • Engineered 4-tier service mesh reducing LLM inference costs by 32%
-    • Achieved <150ms p99 latency supporting 100+ concurrent agents
+    Acme Corp — Senior Software Engineer (Jan 2022 - Present)
+    • Designed event-driven microservices architecture handling 50K requests/sec
+      with 99.9% uptime across 3 availability zones
+    • Reduced CI/CD pipeline duration from 45 minutes to 8 minutes using caching
+    • Mentored team of 5 engineers on distributed systems best practices
 
-    Visual Arena — AI & Infrastructure Engineer (Nov 2023 - Oct 2024)
-    • Architected MLOps pipeline on Kubernetes with <2-minute deployment cycles
-    • Developed multi-agent LLM simulation achieving 91% trajectory accuracy
+    Widgets Inc — Software Engineer (Mar 2019 - Dec 2021)
+    • Built RESTful API serving 10M daily requests with <50ms p95 latency
+    • Migrated monolith to microservices reducing deployment time by 80%
 
     Technical Skills
     AI/ML: Multi-Agent, LLM, PyTorch, RAG, Prompt Engineering
@@ -525,7 +525,7 @@ def main() -> None:
     Languages: Python, Go, Rust, C++
 
     Education
-    Tel Aviv University — B.Sc. Industrial Engineering, Data Science
+    State University — B.Sc. Computer Science
     """
 
     # Score the resume

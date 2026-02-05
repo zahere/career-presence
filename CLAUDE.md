@@ -212,8 +212,9 @@ career-presence/
 ### Pre-Commit Verification (ALWAYS DO THIS)
 Before every commit, run these checks:
 ```bash
-# 1. Check staged files for personal info (cross-ref with config/master_profile.yaml)
-git diff --cached --name-only | xargs grep -l -E "(your-email|your-name|phone|address)" 2>/dev/null
+# 1. Check staged files for personal data (extract patterns from config/master_profile.yaml)
+# Build a grep pattern from: name, email, phone, social URLs in master_profile.yaml
+grep -E "^\s+(full|email|phone|linkedin|github):" config/master_profile.yaml | awk -F'"' '{print $2}' | grep . | paste -sd'|' | xargs -I{} git diff --cached --name-only -z | xargs -0 grep -l -i -E "{}" 2>/dev/null
 
 # 2. Verify .gitignore is working (no sensitive files staged)
 git status --short | grep -E "(master_profile|credentials\.env|site.config.ts)"

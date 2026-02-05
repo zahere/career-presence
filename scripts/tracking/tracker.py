@@ -531,7 +531,7 @@ def main() -> None:
     tracker.update_status("app_12345", "ready", "Resume variant generated")
 
     # Add interaction
-    tracker.add_interaction("app_12345", "note", "Strong alignment with AgentiCraft work")
+    tracker.add_interaction("app_12345", "note", "Strong alignment with project work")
 
     # Get stats
     print(tracker.generate_status_report())

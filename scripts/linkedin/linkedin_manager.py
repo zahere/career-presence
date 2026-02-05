@@ -81,7 +81,7 @@ class LinkedInContentManager:
         "career": [
             "The best career advice I ignored (and why I regret it)",
             "What I wish I knew before my first AI job",
-            "Why I left a stable job to build AgentiCraft",
+            "Why I left a stable job to build my own project",
         ],
     }
 
@@ -387,7 +387,7 @@ Thanks to everyone who's been part of this journey.
                 "LLMOps best practices",
             ],
             PostType.BUILD_IN_PUBLIC: [
-                "AgentiCraft weekly update",
+                "Project weekly update",
                 "New feature implementation",
                 "Architecture decision",
                 "Performance optimization",
@@ -412,7 +412,7 @@ Thanks to everyone who's been part of this journey.
         return random.choice(suggestions.get(post_type, ["General update"]))
 
     def get_post_ideas(self, post_type: PostType | None = None) -> list[str]:
-        """Generate post ideas based on AgentiCraft and career context."""
+        """Generate post ideas based on project and career context."""
         ideas = {
             PostType.TECHNICAL_INSIGHT: [
                 "What I learned building a 27-service mesh for LLM coordination",
@@ -422,7 +422,7 @@ Thanks to everyone who's been part of this journey.
                 "Building evaluation frameworks with LLM-as-judge methodology",
             ],
             PostType.BUILD_IN_PUBLIC: [
-                "Week N: Implementing circuit breaker patterns in AgentiCraft",
+                "Week N: Implementing circuit breaker patterns in the project",
                 "How we scaled to 100+ concurrent agents with <150ms latency",
                 "Designing the Craft API for developer experience",
                 "Our journey to 116 composable patterns",
@@ -473,7 +473,7 @@ Thanks to everyone who's been part of this journey.
     def suggest_headline_update(
         self,
         job_description: str,
-        current_headline: str = "Building AgentiCraft | AI Infrastructure Engineer | Multi-Agent Systems Expert",
+        current_headline: str = "Building [Project] | [Role] | [Specialty]",
     ) -> dict[str, str]:
         """
         Suggest headline update based on job description.
@@ -492,7 +492,7 @@ Thanks to everyone who's been part of this journey.
             suggested = "AI Research Engineer | Multi-Agent Systems | NeurIPS 2026 Submission"
             reason = "Job emphasizes research; switching to research-focused headline"
         elif "founding" in jd_lower or "startup" in jd_lower or "0-to-1" in jd_lower:
-            suggested = "AI/ML Founding Engineer | Built AgentiCraft from 0 → 116+ patterns | Open to early-stage"
+            suggested = "AI/ML Founding Engineer | Built [Project] from 0 → production | Open to early-stage"
             reason = "Job is founding/startup role; emphasizing entrepreneurial experience"
         elif "platform" in jd_lower or "infrastructure" in jd_lower:
             suggested = (
@@ -501,7 +501,7 @@ Thanks to everyone who's been part of this journey.
             reason = "Job emphasizes platform; highlighting infrastructure experience"
         else:
             # Default: job hunting mode
-            suggested = "AI Infrastructure Engineer | Building AgentiCraft | Open to Opportunities"
+            suggested = "AI Infrastructure Engineer | Building [Project] | Open to Opportunities"
             reason = "Switching to job hunting headline for visibility"
 
         return {"current": current_headline, "suggested": suggested, "reason": reason}
@@ -526,22 +526,21 @@ Thanks to everyone who's been part of this journey.
         if context == "recruiter":
             message = f"""Hi {first_name},
 
-I saw {company} is hiring for {person_role} roles. I'm the creator of AgentiCraft (enterprise multi-agent platform) and would love to learn more!
+I saw {company} is hiring for {person_role} roles. I've been building enterprise-grade AI systems and would love to learn more!
 
-Best,
-Zaher"""
+Best regards"""
 
         elif context == "hiring_manager":
             message = f"""Hi {first_name},
 
-Just applied for the {person_role} role at {company}. My experience building AgentiCraft (116+ patterns, enterprise-ready) aligns well.
+Just applied for the {person_role} role at {company}. My experience building production AI systems aligns well.
 
 Would love to connect!"""
 
         else:  # peer
             message = f"""Hi {first_name},
 
-I came across your work as {person_role} at {company} — impressive! I'm building AgentiCraft (multi-agent coordination) and working on similar problems.
+I came across your work as {person_role} at {company} — impressive! I'm building AI coordination systems and working on similar problems.
 
 Would love to exchange ideas!"""
 

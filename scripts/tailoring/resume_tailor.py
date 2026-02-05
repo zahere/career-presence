@@ -154,10 +154,10 @@ class ResumeTailor:
 
         # Base summary components
         summaries = {
-            "ai_engineer": r"""\small{AI Infrastructure Engineer specializing in production-grade multi-agent systems and enterprise AI platforms. Architected AgentiCraft, an enterprise platform with 116 composable patterns and 27 integrated services, demonstrating expertise in agentic workflows, service mesh architecture, and LLMOps at scale. Proven track record building MLOps infrastructure and deploying AI systems in regulated environments with rigorous security requirements. Combines systems thinking with deep technical expertise to deliver scalable, production-ready AI platforms.}""",
+            "ai_engineer": r"""\small{AI Infrastructure Engineer specializing in production-grade multi-agent systems and enterprise AI platforms. Built enterprise platforms with composable patterns and integrated services, demonstrating expertise in agentic workflows, service mesh architecture, and LLMOps at scale. Proven track record building MLOps infrastructure and deploying AI systems in regulated environments with rigorous security requirements. Combines systems thinking with deep technical expertise to deliver scalable, production-ready AI platforms.}""",
             "ml_engineer": r"""\small{Machine Learning Engineer with expertise in building production ML systems at scale. Led development of multi-agent LLM systems achieving 38\% improvement in behavioral realism and 91\% trajectory accuracy. Experienced in MLOps pipeline design, model serving infrastructure, and real-time inference optimization. Combines research engineering background with practical systems deployment experience.}""",
             "platform_engineer": r"""\small{Platform Engineer specializing in ML infrastructure and distributed systems. Architected 4-tier service mesh with 27 integrated services, achieving <150ms p99 latency supporting 100+ concurrent agents. Expert in Kubernetes, CI/CD automation, and cloud-native architectures (AWS, GCP, Azure). Track record of reducing deployment cycles from hours to minutes while maintaining enterprise-grade security and compliance.}""",
-            "research_engineer": r"""\small{Research Engineer bridging academic rigor with production systems. Building AgentiCraft, a protocol-native multi-agent coordination framework exploring token efficiency and mesh-native coordination. Background in experimental design, benchmarking, and systematic evaluation of ML systems. Combines research methodology with practical engineering to deliver reproducible, publishable results.}""",
+            "research_engineer": r"""\small{Research Engineer bridging academic rigor with production systems. Building protocol-native multi-agent coordination frameworks exploring token efficiency and mesh-native coordination. Background in experimental design, benchmarking, and systematic evaluation of ML systems. Combines research methodology with practical engineering to deliver reproducible, publishable results.}""",
         }
 
         # Use keywords to influence template selection when role title is ambiguous
@@ -434,7 +434,7 @@ def main() -> None:
         ],
         "matched_skills": ["python", "kubernetes", "llm"],
         "tailoring_notes": [
-            "Emphasize AgentiCraft multi-agent work",
+            "Emphasize multi-agent system work",
             "Highlight production deployment experience",
         ],
     }

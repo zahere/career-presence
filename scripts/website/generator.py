@@ -90,7 +90,7 @@ description: "{personal["tagline"]}"
 I specialize in building production-grade AI systems that bridge the gap between cutting-edge research and real-world deployment.
 
 ### Current Focus
-- Building **AgentiCraft** - Enterprise multi-agent coordination platform
+- Building enterprise multi-agent coordination platforms
 - Researching token efficiency in multi-agent LLM coordination
 - Exploring protocol-native MCP and A2A integration
 
@@ -284,7 +284,7 @@ Thoughts on AI infrastructure, multi-agent systems, and building production-read
 - Multi-agent coordination patterns
 - Production LLM systems
 - MLOps and infrastructure
-- Building AgentiCraft
+- Building AI systems
 - Career in AI engineering
 """
 
