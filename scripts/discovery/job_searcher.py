@@ -31,6 +31,88 @@ def load_targets() -> dict:
     return {}
 
 
+def apply_targets_filter(jobs: list[dict], targets: dict) -> list[dict]:
+    """
+    Apply targets configuration to job list.
+
+    - Adds tier info (tier1/tier2/tier3/unknown)
+    - Adds priority score
+    - Adds auto_apply eligibility
+    - Filters out exclusions
+
+    Args:
+        jobs: List of job dictionaries
+        targets: Loaded targets.yaml configuration
+
+    Returns:
+        Filtered and enriched job list
+    """
+    if not targets:
+        return jobs
+
+    # Build company lookup
+    company_tiers = {}
+    for tier_name in ["tier1", "tier2", "tier3"]:
+        tier_data = targets.get("tiers", {}).get(tier_name, {})
+        for company in tier_data.get("companies", []):
+            company_name = company.get("name", "").lower()
+            company_tiers[company_name] = {
+                "tier": tier_name,
+                "priority": company.get("priority", 3),
+                "auto_apply": tier_name in ["tier1", "tier2"],
+                "careers_url": company.get("careers_url"),
+            }
+
+    # Get exclusions
+    exclusions = targets.get("exclusions", {})
+    excluded_companies = [c.lower() for c in exclusions.get("companies", [])]
+    excluded_keywords = [k.lower() for k in exclusions.get("keywords", [])]
+
+    # Get target roles
+    target_roles = targets.get("target_roles", {})
+    primary_roles = [r.lower() for r in target_roles.get("primary", [])]
+    secondary_roles = [r.lower() for r in target_roles.get("secondary", [])]
+
+    enriched_jobs = []
+    for job in jobs:
+        company = (job.get("company") or "").lower()
+        title = (job.get("title") or "").lower()
+        description = (job.get("description") or "").lower()
+
+        # Check exclusions
+        if company in excluded_companies:
+            continue
+        if any(kw in title or kw in description for kw in excluded_keywords):
+            continue
+
+        # Add tier info
+        tier_info = company_tiers.get(company, {
+            "tier": "unknown",
+            "priority": 4,
+            "auto_apply": False,
+        })
+        job["target_tier"] = tier_info["tier"]
+        job["target_priority"] = tier_info["priority"]
+        job["auto_apply_eligible"] = tier_info["auto_apply"]
+
+        # Check role match
+        if any(role in title for role in primary_roles):
+            job["role_match"] = "primary"
+            job["target_priority"] = min(job["target_priority"], 1)
+        elif any(role in title for role in secondary_roles):
+            job["role_match"] = "secondary"
+            job["target_priority"] = min(job["target_priority"], 2)
+        else:
+            job["role_match"] = "other"
+
+        enriched_jobs.append(job)
+
+    # Sort by priority (lower is better)
+    enriched_jobs.sort(key=lambda j: (j.get("target_priority", 4), j.get("target_tier", "z")))
+
+    return enriched_jobs
+
+
 def deduplicate_jobs(jobs: list[dict]) -> list[dict]:
     """
     Remove duplicate job postings.
@@ -131,6 +213,22 @@ def search_jobs(
     # Deduplicate jobs
     jobs_list = deduplicate_jobs(jobs_list)
 
+    # Apply targets configuration (tier info, priority, exclusions)
+    targets = load_targets()
+    if targets:
+        original_count = len(jobs_list)
+        jobs_list = apply_targets_filter(jobs_list, targets)
+        filtered_count = original_count - len(jobs_list)
+        if filtered_count > 0:
+            print(f"Filtered {filtered_count} jobs based on exclusions")
+
+        # Count by tier
+        tier_counts = {}
+        for job in jobs_list:
+            tier = job.get("target_tier", "unknown")
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+        print(f"Jobs by tier: {tier_counts}")
+
     result = {
         "search_term": search_term,
         "location": location,
@@ -178,9 +276,14 @@ def print_summary(result: dict) -> None:
         location = job.get("location", "N/A")
         site = job.get("site", "N/A")
         url = job.get("job_url", "")
+        tier = job.get("target_tier", "")
+        role_match = job.get("role_match", "")
 
-        print(f"{i:2}. {title}")
-        print(f"    Company:  {company}")
+        tier_badge = f" [{tier.upper()}]" if tier and tier != "unknown" else ""
+        role_badge = f" ({role_match})" if role_match and role_match != "other" else ""
+
+        print(f"{i:2}. {title}{role_badge}")
+        print(f"    Company:  {company}{tier_badge}")
         print(f"    Location: {location}")
         print(f"    Source:   {site}")
         if url:
