@@ -1,9 +1,8 @@
-# AGENTS.md - Multi-Agent Coordination for AutoApply
+# AGENTS.md - Multi-Agent Coordination for Career Presence
 
 ## Overview
 
-AutoApply uses a multi-agent pattern where Claude Code orchestrates specialized tasks.
-This document defines the coordination protocols for complex workflows.
+Career Presence uses a multi-agent pattern where Claude Code orchestrates specialized tasks across job search, resume tailoring, platform management, and digital presence. This document defines the coordination protocols for complex workflows.
 
 ## Agent Roles
 
@@ -11,92 +10,177 @@ This document defines the coordination protocols for complex workflows.
 **Purpose**: Find and filter relevant job opportunities
 
 **Capabilities**:
-- Query LinkedIn MCP for job listings
-- Fetch jobs from Greenhouse/Lever APIs
+- Query JobSpy MCP for multi-platform search (LinkedIn, Indeed, Glassdoor)
+- Fetch jobs from Greenhouse/Lever/Ashby APIs
 - Scrape company career pages
-- Initial match scoring
+- Initial match scoring against master profile
 
-**Input**: Search criteria (roles, locations, companies)
+**Input**: Search criteria (roles, locations, companies, filters)
 **Output**: List of job candidates with preliminary scores
+
+**Module**: `scripts/discovery/job_searcher.py`
 
 ### 2. Analysis Agent
 **Purpose**: Deep analysis of job descriptions
 
 **Capabilities**:
 - Extract requirements (must-have vs nice-to-have)
-- Identify ATS keywords
-- Research company context
-- Calculate detailed match scores
+- Identify ATS keywords and phrases
+- Research company context (news, culture, tech stack)
+- Calculate detailed match scores against skills
 
 **Input**: Job URL or description
-**Output**: Structured JobAnalysis object
+**Output**: Structured JobAnalysis object with scores
+
+**Module**: `scripts/analysis/job_analyzer.py`
 
 ### 3. Tailoring Agent
-**Purpose**: Generate resume variants
+**Purpose**: Generate resume variants optimized for specific roles
 
 **Capabilities**:
 - Parse base LaTeX resume
-- Apply role-specific modifications
-- Optimize for ATS
+- Apply role-specific template modifications
+- Reorder experience bullets by relevance
+- Optimize keywords for ATS scoring
 - Compile to PDF/DOCX
 
-**Input**: JobAnalysis + base resume
-**Output**: Tailored resume variant
+**Input**: JobAnalysis + base resume + template
+**Output**: Tailored resume variant (PDF)
 
-### 4. Submission Agent
+**Module**: `scripts/tailoring/resume_tailor.py`
+
+### 4. ATS Scoring Agent
+**Purpose**: Validate resume-job match quality
+
+**Capabilities**:
+- Extract keywords from job description
+- Score resume against JD requirements
+- Check formatting compliance
+- Identify missing keywords
+
+**Input**: Resume PDF + Job Description
+**Output**: ATS score (0-100) with recommendations
+
+**Module**: `scripts/analysis/ats_scorer.py`
+
+### 5. Submission Agent
 **Purpose**: Automate application submission
 
 **Capabilities**:
-- Navigate application pages (Playwright)
-- Fill form fields
+- Navigate application pages (Playwright MCP)
+- Fill form fields intelligently
 - Upload documents
-- Capture confirmation
+- Handle multi-step applications
+- Capture confirmation screenshots
 
 **Input**: Job URL + resume + profile data
 **Output**: Application confirmation
 
-### 5. Tracking Agent
+**Module**: `scripts/submission/application_submitter.py`
+
+### 6. Tracking Agent
 **Purpose**: Manage application lifecycle
 
 **Capabilities**:
 - Update application status
-- Record interactions
-- Generate analytics
+- Record interactions and notes
+- Generate analytics and reports
 - Schedule follow-ups
+- Track response rates
 
 **Input**: Application events
 **Output**: Status updates, reports
 
+**Module**: `scripts/tracking/tracker.py`
+
+### 7. Sync Agent
+**Purpose**: Synchronize content across platforms
+
+**Capabilities**:
+- Read from master_profile.yaml
+- Generate platform-specific content
+- Update Resume, LinkedIn, GitHub, Website
+- Ensure consistency across platforms
+
+**Input**: master_profile.yaml changes
+**Output**: Updated platform content
+
+**Module**: `scripts/sync/sync_manager.py`
+
+### 8. Website Agent
+**Purpose**: Generate and manage personal website
+
+**Capabilities**:
+- Build Astro static site
+- Generate pages from content files
+- Apply site configuration
+- Deploy to hosting
+
+**Input**: Content files + site.config.ts
+**Output**: Static website in `/dist`
+
+**Module**: `scripts/website/generator.py`
+
+### 9. LinkedIn Agent
+**Purpose**: Manage LinkedIn presence and content
+
+**Capabilities**:
+- Generate profile content
+- Draft and schedule posts
+- Manage content calendar
+- Track engagement analytics
+
+**Input**: master_profile.yaml + content strategy
+**Output**: LinkedIn content
+
+**Module**: `scripts/linkedin/linkedin_manager.py`
+
+---
+
 ## Coordination Patterns
 
-### Sequential Pipeline
+### Sequential Pipeline (Job Application)
 ```
-Discovery → Analysis → Tailoring → [Human Review] → Submission → Tracking
+Discovery → Analysis → Tailoring → ATS Score → [Human Review] → Submission → Tracking
 ```
-
-Standard flow for each application.
+Standard flow for each job application.
 
 ### Parallel Discovery
 ```
-     ┌─ LinkedIn MCP ──┐
-     │                 │
-Start ├─ Greenhouse API ─┼─→ Merge & Dedupe → Analysis
-     │                 │
-     └─ Company Sites ─┘
+     ┌─ JobSpy (LinkedIn) ──┐
+     │                      │
+Start ├─ JobSpy (Indeed) ────┼─→ Merge & Dedupe → Analysis
+     │                      │
+     ├─ Greenhouse API ─────┤
+     │                      │
+     └─ Company Careers ────┘
 ```
-
 Discover from multiple sources simultaneously.
 
-### Batch Processing
+### Platform Sync
 ```
-For each job in discovered_jobs:
-  if match_score > threshold:
-    analyze(job)
-    tailor(job)
-    queue_for_review(job)
+                    ┌─→ Resume (LaTeX)
+                    │
+master_profile.yaml ├─→ LinkedIn (Profile + Content)
+                    │
+                    ├─→ GitHub (README)
+                    │
+                    └─→ Website (Astro)
 ```
+Single source of truth syncs to all platforms.
 
-Process multiple jobs in batch.
+### Batch Processing
+```python
+for job in discovered_jobs:
+    if job.match_score >= THRESHOLD:
+        analysis = analyze(job)
+        if analysis.score >= ATS_THRESHOLD:
+            variant = tailor(job, analysis)
+            queue_for_review(job, variant)
+```
+Process multiple jobs efficiently.
+
+---
 
 ## Communication Protocol
 
@@ -105,8 +189,10 @@ Process multiple jobs in batch.
 action: discover
 params:
   query: "AI Engineer"
-  locations: ["Remote", "San Francisco"]
-  companies: ["tier1", "tier2"]
+  locations: ["Remote", "San Francisco", "Tel Aviv"]
+  platforms: ["linkedin", "indeed", "glassdoor"]
+  experience_level: ["mid_senior", "senior"]
+  posted_within: "24h"
   max_results: 50
 ```
 
@@ -117,15 +203,26 @@ params:
   job_url: "https://..."
   deep_analysis: true
   research_company: true
+  extract_keywords: true
 ```
 
-### Tailoring Request
+### Resume Tailoring Request
 ```yaml
 action: tailor
 params:
   job_id: "abc123"
-  variant_type: "ai_engineer"
-  include_cover_letter: true
+  template: "ai_engineer"
+  include_cover_letter: false
+  ats_optimize: true
+```
+
+### Platform Sync Request
+```yaml
+action: sync
+params:
+  platforms: ["resume", "linkedin", "github", "website"]
+  source: "master_profile.yaml"
+  dry_run: false
 ```
 
 ### Submission Request
@@ -134,20 +231,23 @@ action: submit
 params:
   job_id: "abc123"
   resume_path: "/path/to/variant.pdf"
-  confirm: true  # Requires explicit confirmation
+  confirm: true  # ALWAYS requires explicit confirmation
 ```
+
+---
 
 ## Human-in-the-Loop Checkpoints
 
 ### Required Confirmations
 1. **Before first submission of the day**: Verify system state
-2. **Before any submission**: Review resume variant
-3. **For high-stakes applications**: Tier 1 companies
+2. **Before any submission**: Review resume variant and ATS score
+3. **For Tier 1 companies**: Additional review required
 4. **On any error**: Review and decide next action
+5. **For non-whitelisted companies**: Manual approval needed
 
 ### Override Commands
 ```bash
-# Skip human review for this job
+# Skip human review for this job (use sparingly)
 /apply job_123 --auto
 
 # Force re-analysis
@@ -155,26 +255,41 @@ params:
 
 # Cancel pending application
 /cancel job_123
+
+# Resume after CAPTCHA
+/resume-automation
 ```
+
+---
 
 ## Error Recovery
 
 ### On API Failure
-1. Log error with context
-2. Retry with exponential backoff (3 attempts)
+1. Log error with full context
+2. Retry with exponential backoff (3 attempts: 60s, 300s, 900s)
 3. If persistent, skip and mark job for manual review
+4. Notify user if critical
 
-### On CAPTCHA
-1. Pause automation
-2. Alert user
+### On CAPTCHA Detection
+1. Immediately pause all automation
+2. Alert user with screenshot
 3. Wait for manual resolution
-4. Resume on `/resume` command
+4. Resume only on explicit `/resume-automation` command
+
+### On Rate Limit
+1. Log the limit hit
+2. Back off according to schedule
+3. Resume automatically when limit resets
+4. Adjust future request timing
 
 ### On Form Mismatch
 1. Screenshot the form
 2. Log expected vs actual fields
 3. Attempt best-effort fill
 4. Flag for review if critical fields missing
+5. Never submit incomplete applications
+
+---
 
 ## Rate Limiting Coordination
 
@@ -182,14 +297,57 @@ Agents respect global rate limits:
 
 ```python
 RATE_LIMITS = {
-    "linkedin_profile_view": {"per_minute": 5, "per_day": 100},
-    "linkedin_job_search": {"per_minute": 10, "per_day": 500},
+    # Job Discovery
+    "jobspy_search": {"per_minute": 10, "per_day": 500},
     "greenhouse_api": {"per_minute": 60, "per_day": None},
+    "lever_api": {"per_minute": 60, "per_day": None},
+
+    # LinkedIn (be conservative to avoid flags)
+    "linkedin_profile_view": {"per_minute": 5, "per_day": 100},
+    "linkedin_job_apply": {"per_hour": 3, "per_day": 15},
+    "linkedin_post": {"per_day": 1},
+
+    # Applications
     "application_submit": {"per_hour": 5, "per_day": 20},
+
+    # GitHub
+    "github_api": {"per_hour": 5000, "per_day": None},
 }
 ```
 
-Before any action, agents check against shared rate limit state.
+Before any action, agents check against shared rate limit state stored in SQLite.
+
+---
+
+## Configuration Management
+
+### Personal Data Flow
+```
+config/master_profile.yaml (gitignored)
+         ↓
+    Sync Agent
+         ↓
+┌────────┴────────┐
+│  Platform       │
+│  Generators     │
+└────────┬────────┘
+         ↓
+Generated Content (gitignored)
+- website/src/config/site.config.ts
+- website/src/data/pages/*.md
+- linkedin/profile/content.md
+- github/profile/README.md
+```
+
+### Template Files (tracked in git)
+```
+*.example.* files contain placeholders:
+- config/master_profile.yaml.example
+- website/src/config/site.config.example.ts
+- website/src/data/pages/*.example.md
+```
+
+---
 
 ## Logging & Observability
 
@@ -201,25 +359,52 @@ All agent actions logged to `data/agent.log`:
 
 Example:
 ```
-[2025-02-04T14:30:00] [discovery] [search] [*] [success] [Found 23 jobs for "AI Engineer"]
-[2025-02-04T14:30:05] [analysis] [analyze] [job_123] [success] [Match score: 87.5%]
-[2025-02-04T14:31:00] [tailoring] [generate] [job_123] [success] [Created variant_anthropic_ai_20250204]
-[2025-02-04T14:35:00] [submission] [apply] [job_123] [success] [Confirmation captured]
+[2026-02-05T14:30:00] [discovery] [search] [*] [success] [Found 23 jobs for "AI Engineer"]
+[2026-02-05T14:30:05] [analysis] [analyze] [job_123] [success] [Match: 87.5%, ATS: 82%]
+[2026-02-05T14:31:00] [tailoring] [generate] [job_123] [success] [variant_anthropic_ai_20260205.pdf]
+[2026-02-05T14:32:00] [ats_scorer] [score] [job_123] [success] [Score: 85/100]
+[2026-02-05T14:35:00] [submission] [apply] [job_123] [success] [Confirmation captured]
+[2026-02-05T14:35:01] [tracking] [update] [job_123] [success] [Status: applied]
 ```
+
+---
 
 ## State Management
 
-Application state stored in SQLite:
-- Current pipeline position for each job
-- Agent-specific metadata
+Application state stored in SQLite (`data/applications.db`):
+- Job discovery results and metadata
+- Application pipeline position
+- Agent-specific state and metadata
 - Retry counts and backoff state
+- Rate limit tracking
 
 Shared state prevents duplicate actions across agent invocations.
 
+---
+
 ## Best Practices
 
+### General
 1. **Idempotency**: All actions should be safe to retry
-2. **Atomicity**: Complete actions fully or rollback
-3. **Visibility**: Log everything, surface errors
+2. **Atomicity**: Complete actions fully or rollback cleanly
+3. **Visibility**: Log everything, surface errors immediately
 4. **Human Agency**: Always allow override and intervention
 5. **Quality over Quantity**: Better 5 great applications than 50 generic ones
+
+### Security
+1. **Never commit personal data** - Use .gitignore and .example templates
+2. **Verify before commit** - Check for exposed personal info
+3. **Separate configs** - Personal data in gitignored files only
+4. **Credential isolation** - Store in credentials.env only
+
+### Performance
+1. **Batch operations** when possible
+2. **Cache API responses** to reduce calls
+3. **Parallel execution** for independent tasks
+4. **Respect rate limits** proactively
+
+### Maintainability
+1. **Single source of truth** - master_profile.yaml
+2. **Config-driven** - Use site.config.ts pattern
+3. **Template separation** - .example files for public repo
+4. **Clear module boundaries** - One agent per responsibility

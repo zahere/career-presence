@@ -201,6 +201,17 @@ career-presence/
 - ✅ Always verify .gitignore covers sensitive files before committing
 - ✅ Use separate browser profile for automation
 
+### Pre-Commit Verification (ALWAYS DO THIS)
+Before every commit, run verification to ensure no personal data is exposed:
+```bash
+# Check staged files for personal info patterns
+git diff --cached --name-only | xargs grep -l -E "(your-email|your-name|phone|address)" 2>/dev/null
+
+# Verify .gitignore is working
+git status --short | grep -E "(master_profile|site.config.ts|Layout.astro)"
+```
+If any personal data is found, unstage the file or add it to .gitignore.
+
 **Gitignored Personal Data:**
 - `config/master_profile.yaml` → use `master_profile.yaml.example`
 - `linkedin/profile/` → generated LinkedIn content

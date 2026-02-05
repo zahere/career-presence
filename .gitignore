@@ -31,6 +31,10 @@ materials/agenticraft_overview.md
 website/src/data/pages/*.md
 !website/src/data/pages/*.example.md
 
+# Website config (contains personal info)
+website/src/config/site.config.ts
+!website/src/config/site.config.example.ts
+
 # GitHub repos (personal project documentation)
 github/repos/*
 !github/repos/.gitkeep
