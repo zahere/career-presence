@@ -119,9 +119,13 @@ class PlatformSyncManager:
     
     def _update_latex_field(self, content: str, field: str, value: str) -> str:
         """Update a LaTeX field definition."""
-        pattern = rf'\\def\\{field}{{[^}}]*}}'
-        replacement = f'\\def\\{field}{{{value}}}'
-        return re.sub(pattern, replacement, content)
+        # Use re.escape for the field name and proper escaping for \def
+        pattern = r'\\def\\' + re.escape(field) + r'\{[^}]*\}'
+        replacement = r'\\def\\' + field + '{' + value + '}'
+        # Only replace if pattern exists (resume may not use \def macros)
+        if re.search(pattern, content):
+            return re.sub(pattern, replacement, content)
+        return content
     
     def _update_latex_headline(self, content: str, headline: str) -> str:
         """Update the headline/tagline in LaTeX resume."""

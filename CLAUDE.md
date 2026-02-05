@@ -193,9 +193,20 @@ career-presence/
 ### Security & Privacy
 - ❌ Never expose credentials in logs
 - ❌ Never commit credentials to git
+- ❌ Never commit personal/sensitive data (names, emails, phone numbers, addresses)
+- ❌ Never expose real profile content (master_profile.yaml, linkedin/profile/, github/profile/)
 - ✅ Store credentials in `credentials.env` (gitignored)
+- ✅ Use `.example` templates for public repo (with placeholder data)
 - ✅ Redact personal info in error messages
+- ✅ Always verify .gitignore covers sensitive files before committing
 - ✅ Use separate browser profile for automation
+
+**Gitignored Personal Data:**
+- `config/master_profile.yaml` → use `master_profile.yaml.example`
+- `linkedin/profile/` → generated LinkedIn content
+- `github/profile/README.md` → personal GitHub profile
+- `resume/base/master.tex` → personal resume content
+- `data/experiences.json`, `data/projects.json`, `data/skills.json` → personal data
 
 ---
 
@@ -545,7 +556,7 @@ Example: "Building AgentiCraft | AI Infrastructure Engineer | Multi-Agent System
 1. **Description**: Clear, keyword-rich (350 chars)
 2. **README**: Problem → Solution → Demo → Install → Usage
 3. **Topics**: 5-10 relevant tags
-4. **License**: MIT or Apache 2.0
+4. **License**: PolyForm Noncommercial 1.0.0 (or MIT/Apache for open source)
 5. **Social Preview**: Custom image
 
 ### 🌐 WEBSITE

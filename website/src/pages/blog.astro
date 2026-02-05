@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Content, frontmatter } from '../content/blog.md';
+---
+
+<Layout title={frontmatter.title} description={frontmatter.description}>
+  <article class="prose">
+    <Content />
+  </article>
+</Layout>

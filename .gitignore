@@ -27,6 +27,15 @@ data/skills.json
 docs/DIGITAL_PRESENCE_EXPANSION.md
 materials/agenticraft_overview.md
 
+# Website content (contains personal info - generated from master_profile)
+website/src/content/*.md
+!website/src/content/*.example.md
+
+# GitHub repos (personal project documentation)
+github/repos/*
+!github/repos/.gitkeep
+!github/repos/README.example.md
+
 # ═══════════════════════════════════════════════════════════════════════════
 # PYTHON / UV / VENV
 # ═══════════════════════════════════════════════════════════════════════════
@@ -169,3 +178,11 @@ temp/
 # MCP SERVERS
 # ═══════════════════════════════════════════════════════════════════════════
 mcp-servers/*/node_modules/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WEBSITE (Generated)
+# ═══════════════════════════════════════════════════════════════════════════
+website/node_modules/
+website/.astro/
+website/dist/
+website/package-lock.json
