@@ -1,0 +1,101 @@
+{
+  "mcpServers": {
+    "jobspy": {
+      "command": "node",
+      "args": ["./mcp-servers/jobspy-mcp-server/src/index.js"],
+      "env": {
+        "ENABLE_SSE": "0"
+      },
+      "description": "Multi-platform job search (LinkedIn, Indeed, Glassdoor)"
+    },
+    "linkedin": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-v", "~/.linkedin-mcp:/home/pwuser/.linkedin-mcp",
+        "-e", "LINKEDIN_COOKIE",
+        "stickerdaniel/linkedin-mcp-server:latest"
+      ],
+      "env": {
+        "LINKEDIN_COOKIE": "${LINKEDIN_COOKIE}"
+      },
+      "description": "LinkedIn profile, jobs, networking, applications"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PAT}"
+      },
+      "description": "GitHub profile, repos, README management"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--browser", "chromium"],
+      "description": "Browser automation for job applications and form filling"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y", "@modelcontextprotocol/server-filesystem",
+        "./resume",
+        "./jobs",
+        "./config",
+        "./data",
+        "./linkedin",
+        "./github"
+      ],
+      "description": "File system access for resume and career data management"
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-fetch"],
+      "description": "Fetch career pages and job descriptions"
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "disabled": true,
+      "description": "Company research and job posting verification (optional)"
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server"],
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_KEY": "${SUPABASE_KEY}"
+      },
+      "disabled": true,
+      "description": "Cloud database for application tracking (optional)"
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-slack"],
+      "env": {
+        "SLACK_WEBHOOK_URL": "${SLACK_WEBHOOK_URL}"
+      },
+      "disabled": true,
+      "description": "Notifications for applications and interviews (optional)"
+    }
+  },
+
+  "_setup": {
+    "required": [
+      "1. Pull JobSpy MCP: docker pull oculair/jobspy-mcp:latest",
+      "2. Get LinkedIn session: uvx linkedin-scraper-mcp --get-session",
+      "3. Get GitHub PAT: https://github.com/settings/tokens (scopes: repo, user)"
+    ],
+    "optional": [
+      "4. Get Brave API key: https://brave.com/search/api/",
+      "5. Set up Supabase: https://supabase.com",
+      "6. Create Slack webhook for notifications"
+    ],
+    "env_vars": [
+      "Copy config/credentials.env.example to config/credentials.env",
+      "Fill in: LINKEDIN_COOKIE, GITHUB_PAT, and optional keys"
+    ]
+  }
+}

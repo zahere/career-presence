@@ -1,0 +1,72 @@
+% AI Engineer Resume Template
+% Optimized for: AI Engineer, ML Engineer, LLM Engineer roles
+% Lead with: AgentiCraft, multi-agent systems, LLMOps
+
+\input{../base/master.tex}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TEMPLATE-SPECIFIC CONFIGURATION
+% ═══════════════════════════════════════════════════════════════════════════
+
+% Priority keywords for this template
+% multi-agent, LLM, RAG, orchestration, inference, AI infrastructure
+
+% Section ordering for AI Engineer roles:
+% 1. Professional Summary (AI-focused)
+% 2. Technical Skills (AI/ML first)
+% 3. Experience (AgentiCraft first)
+% 4. Projects
+% 5. Education
+
+% ═══════════════════════════════════════════════════════════════════════════
+% PROFESSIONAL SUMMARY VARIANT
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\summaryAIEngineer}{
+AI Infrastructure Engineer specializing in production-grade multi-agent systems
+and enterprise AI platforms. Architected AgentiCraft, an enterprise platform with
+116 composable patterns and 27 integrated services, achieving <150ms p99 latency
+with 100+ concurrent agents. Proven expertise in LLMOps at scale, reducing
+inference costs by 32\% through intelligent provider routing.
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% SKILLS ORDERING FOR AI ENGINEER
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\skillsAIEngineer}{
+\textbf{AI/ML:} Multi-Agent Orchestration, LLMOps, RAG, Prompt Engineering, A2A/MCP Protocols \\
+\textbf{Infrastructure:} Kubernetes, Docker, AWS, GCP, CI/CD, OpenTelemetry \\
+\textbf{Languages:} Python, Go, Rust, C++, TypeScript \\
+\textbf{Databases:} PostgreSQL, Redis, Pinecone, Qdrant, Weaviate
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% EXPERIENCE BULLET PRIORITY
+% ═══════════════════════════════════════════════════════════════════════════
+% AgentiCraft bullets to prioritize:
+% - ac_patterns (116 patterns, reasoning)
+% - ac_protocols (A2A, MCP, 45% reduction)
+% - ac_service_mesh (32% cost reduction)
+% - ac_craft_api (developer experience)
+
+% Visual Arena bullets to prioritize:
+% - va_simulation (multi-agent LLM)
+% - va_mlops (MLOps pipeline)
+
+% Smoove bullets to prioritize:
+% - sm_rag (RAG pipeline)
+% - sm_evaluation (LLM-as-judge)
+
+% ═══════════════════════════════════════════════════════════════════════════
+% USAGE
+% ═══════════════════════════════════════════════════════════════════════════
+% This template is selected when job description contains:
+% - "multi-agent" or "agent" keywords
+% - "LLM" or "large language model"
+% - "AI infrastructure" or "AI platform"
+% - "MLOps" or "LLMOps"
+% - Research-adjacent AI engineering roles
+
+% To generate variant:
+% 1. Copy this file to variants/generated/{company}_{role}_{date}.tex
+% 2. Run tailoring script to inject job-specific keywords
+% 3. Compile with: pdflatex -interaction=nonstopmode variant.tex (run twice)

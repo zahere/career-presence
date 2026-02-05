@@ -1,0 +1,169 @@
+# Career Presence System .gitignore
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CREDENTIALS & SECRETS
+# ═══════════════════════════════════════════════════════════════════════════
+config/credentials.env
+config/master_profile.yaml
+.env
+.env.*
+!.env.example
+!*.yaml.example
+*.env.local
+.linkedin-mcp/
+secrets/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PERSONAL DATA (use .example versions for public repo)
+# ═══════════════════════════════════════════════════════════════════════════
+resume/base/master.tex
+linkedin/profile/content.md
+github/profile/README.md
+portfolio/website/src/pages/index.astro
+templates/cover_letters/*.md
+!templates/cover_letters/*.example.md
+data/experiences.json
+data/projects.json
+data/skills.json
+docs/DIGITAL_PRESENCE_EXPANSION.md
+materials/agenticraft_overview.md
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PYTHON / UV / VENV
+# ═══════════════════════════════════════════════════════════════════════════
+# Virtual environments
+.venv/
+venv/
+env/
+.Python
+
+# uv
+.uv/
+uv.lock
+
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Type checking
+.mypy_cache/
+.pytype/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GENERATED FILES (Runtime)
+# ═══════════════════════════════════════════════════════════════════════════
+# Resume variants and exports
+resume/variants/*
+!resume/variants/.gitkeep
+resume/exports/*
+!resume/exports/.gitkeep
+
+# Job data
+jobs/discovered/*
+!jobs/discovered/.gitkeep
+jobs/analyzed/*
+!jobs/analyzed/.gitkeep
+jobs/applied/*
+!jobs/applied/.gitkeep
+
+# Screenshots
+screenshots/
+
+# LinkedIn generated content
+linkedin/posts/drafts/*.json
+linkedin/posts/scheduled/*.json
+linkedin/profile/*.md
+!linkedin/profile/content.md
+
+# Resume sync outputs
+resume/sync_report.md
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DATABASE & LOGS
+# ═══════════════════════════════════════════════════════════════════════════
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
+data/*.log
+*.log
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LATEX
+# ═══════════════════════════════════════════════════════════════════════════
+*.aux
+*.lof
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.lb
+*.dvi
+*.xdv
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.synctex
+*.synctex.gz
+*.pdfsync
+*.run.xml
+
+# ═══════════════════════════════════════════════════════════════════════════
+# IDE & EDITORS
+# ═══════════════════════════════════════════════════════════════════════════
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# OS
+# ═══════════════════════════════════════════════════════════════════════════
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TEMPORARY
+# ═══════════════════════════════════════════════════════════════════════════
+*.tmp
+*.temp
+*.bak
+*.backup
+tmp/
+temp/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MCP SERVERS
+# ═══════════════════════════════════════════════════════════════════════════
+mcp-servers/*/node_modules/

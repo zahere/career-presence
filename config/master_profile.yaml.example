@@ -1,0 +1,280 @@
+# Master Career Profile Configuration - EXAMPLE
+# Single source of truth for all career platforms
+# Syncs to: Resume, LinkedIn, GitHub, Personal Website
+#
+# USAGE: Copy this file to master_profile.yaml and fill in your details
+# cp config/master_profile.yaml.example config/master_profile.yaml
+
+version: "1.0"
+last_updated: "2026-02-05"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PERSONAL INFORMATION
+# ═══════════════════════════════════════════════════════════════════════════
+personal:
+  name:
+    full: "Your Name"
+    first: "Your"
+    last: "Name"
+
+  tagline: "Your Role • Your Specialty"
+
+  # Platform-specific headlines
+  headlines:
+    resume: "Your Role • Your Specialty"
+    linkedin: "Building [Project] | Your Role | Your Expertise"
+    github: "Building [Project] - Your Tagline | Your Role"
+    website: "Your Role & Creator of [Project]"
+
+  contact:
+    email: "you@example.com"
+    phone: "+1-555-000-0000"
+    location: "City, Country"
+    timezone: "Your/Timezone"
+
+  social:
+    linkedin: "https://linkedin.com/in/yourprofile"
+    github: "https://github.com/yourusername"
+    twitter: ""  # Add if available
+    website: ""  # Will be generated
+
+  languages:
+    - language: "English"
+      proficiency: "Fluent"
+    - language: "Your Language"
+      proficiency: "Native"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROFESSIONAL SUMMARIES
+# Platform-specific versions optimized for each context
+# ═══════════════════════════════════════════════════════════════════════════
+summaries:
+  # Resume: Formal, metrics-heavy, ATS-optimized
+  resume: |
+    [Your Role] specializing in [your specialty]. Achieved [key metric]
+    at [company/project]. Proven track record in [domain] with expertise
+    in [technologies].
+
+  # LinkedIn: Conversational, story-driven, networking-focused
+  linkedin: |
+    I build [what you build].
+
+    What I do:
+    → [Achievement 1]
+    → [Achievement 2]
+    → [Achievement 3]
+
+    Previously: [Brief history]
+
+    Currently exploring opportunities in [target area].
+    Let's connect if you're working on interesting problems.
+
+  # GitHub: Technical, project-focused, developer-friendly
+  github: |
+    ## 👋 Hi, I'm [Name]
+
+    **[Your Role]** building [what you build].
+
+    ### 🚀 Current Focus
+    - Building **[Project]** - [Description]
+
+    ### 💼 Experience
+    - **[Company]** - [Achievement with metric]
+
+    ### 🛠️ Tech Stack
+    ```
+    Category: Skill1 | Skill2 | Skill3
+    ```
+
+  # Website: Marketing-focused, engaging, portfolio-oriented
+  website: |
+    I'm a [Role] who builds [what you build].
+
+    My flagship project is [Project], [brief description].
+
+# ═══════════════════════════════════════════════════════════════════════════
+# EXPERIENCE
+# ═══════════════════════════════════════════════════════════════════════════
+experience:
+  - id: "current_project"
+    company: "Your Project/Company"
+    role: "Your Role"
+    type: "founder"  # founder, employee, contractor, intern
+    location: "Remote"
+    start_date: "2024-01"
+    end_date: null  # null = present
+
+    short_description: |
+      Brief description of what you do.
+
+    bullets:
+      - text: "Achieved [result] by [action] resulting in [metric]"
+        metrics: ["metric1", "metric2"]
+        keywords: ["keyword1", "keyword2"]
+
+    technologies:
+      - "Technology1"
+      - "Technology2"
+
+  - id: "previous_role"
+    company: "Previous Company"
+    role: "Previous Role"
+    type: "employee"
+    location: "City, Country"
+    start_date: "2023-01"
+    end_date: "2024-01"
+
+    short_description: |
+      What you did at this role.
+
+    bullets:
+      - text: "Achievement with metric"
+        metrics: ["metric"]
+        keywords: ["keyword"]
+
+    technologies:
+      - "Technology"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROJECTS
+# For GitHub pinned repos and portfolio
+# ═══════════════════════════════════════════════════════════════════════════
+projects:
+  - id: "main_project"
+    name: "Project Name"
+    tagline: "Short tagline"
+    description: |
+      Project description with key features and metrics.
+
+    repo_url: "https://github.com/you/project"
+    demo_url: ""
+    docs_url: ""
+
+    status: "active"  # active, maintained, archived
+    visibility: "public"
+    pinned: true
+
+    highlights:
+      - "Feature 1"
+      - "Feature 2"
+
+    technologies:
+      - "Tech1"
+      - "Tech2"
+
+    topics:
+      - "topic1"
+      - "topic2"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SKILLS
+# Structured for all platforms
+# ═══════════════════════════════════════════════════════════════════════════
+skills:
+  categories:
+    - name: "Category 1"
+      skills:
+        - name: "Skill 1"
+          proficiency: "expert"  # expert, proficient, familiar
+          years: 3
+        - name: "Skill 2"
+          proficiency: "proficient"
+          years: 2
+
+    - name: "Category 2"
+      skills:
+        - name: "Skill 3"
+          proficiency: "expert"
+          years: 4
+
+  # LinkedIn skills (top 50 for endorsements strategy)
+  linkedin_skills:
+    primary:  # Top 3 - pin these
+      - "Primary Skill 1"
+      - "Primary Skill 2"
+      - "Primary Skill 3"
+    secondary:  # Next 7 - actively seek endorsements
+      - "Secondary Skill 1"
+      - "Secondary Skill 2"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# EDUCATION
+# ═══════════════════════════════════════════════════════════════════════════
+education:
+  - institution: "University Name"
+    degree: "Degree Type"
+    program: "Program/Major"
+    start_date: "2020"
+    end_date: "2024"
+    location: "City, Country"
+    highlights:
+      - "Relevant coursework"
+      - "Projects/achievements"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CONTENT STRATEGY
+# For LinkedIn posts and blog articles
+# ═══════════════════════════════════════════════════════════════════════════
+content_strategy:
+  linkedin:
+    posting_frequency: "2-3 posts per week"
+    content_pillars:
+      - name: "Technical Insights"
+        description: "Deep dives into your expertise"
+        percentage: 40
+      - name: "Project Journey"
+        description: "Building in public"
+        percentage: 30
+      - name: "Industry Commentary"
+        description: "Thoughts on trends"
+        percentage: 20
+      - name: "Career & Community"
+        description: "Networking and community"
+        percentage: 10
+
+    hashtags:
+      primary:
+        - "#YourIndustry"
+        - "#YourSkill"
+      secondary:
+        - "#BuildInPublic"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SYNC CONFIGURATION
+# How platforms should be kept in sync
+# ═══════════════════════════════════════════════════════════════════════════
+sync:
+  source_of_truth: "config/master_profile.yaml"
+
+  platforms:
+    resume:
+      template: "resume/base/master.tex"
+      auto_sync: true
+      sections_to_sync:
+        - "personal"
+        - "summaries.resume"
+        - "experience"
+        - "education"
+        - "skills"
+        - "projects"
+
+    linkedin:
+      auto_sync: false  # Manual review required
+      sections_to_sync:
+        - "personal"
+        - "summaries.linkedin"
+        - "experience"
+        - "education"
+        - "skills.linkedin_skills"
+
+    github:
+      auto_sync: true
+      sections_to_sync:
+        - "personal"
+        - "summaries.github"
+        - "projects"
+
+    website:
+      auto_sync: true
+      sections_to_sync:
+        - "all"

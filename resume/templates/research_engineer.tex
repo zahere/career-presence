@@ -1,0 +1,83 @@
+% Research Engineer Resume Template
+% Optimized for: Research Engineer, Applied Scientist, ML Research roles
+% Lead with: Research mindset, evaluation, benchmarking, academic rigor
+
+\input{../base/master.tex}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TEMPLATE-SPECIFIC CONFIGURATION
+% ═══════════════════════════════════════════════════════════════════════════
+
+% Priority keywords for this template
+% research, evaluation, benchmarking, experiments, papers, methodology
+
+% Section ordering for Research Engineer roles:
+% 1. Professional Summary (Research-focused)
+% 2. Research Interests
+% 3. Experience (Research aspects highlighted)
+% 4. Projects (with methodology emphasis)
+% 5. Education
+% 6. Technical Skills
+
+% ═══════════════════════════════════════════════════════════════════════════
+% PROFESSIONAL SUMMARY VARIANT
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\summaryResearchEngineer}{
+Research Engineer bridging cutting-edge AI research and production systems.
+Currently preparing work on token efficiency in multi-agent LLM coordination
+for NeurIPS 2026. Built evaluation frameworks using LLM-as-judge methodology
+with rigorous benchmarking. Developed multi-agent simulation systems with
+91\% trajectory accuracy against real-world data. Combines strong ML fundamentals
+(Tel Aviv University) with hands-on production experience.
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% SKILLS ORDERING FOR RESEARCH ENGINEER
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\skillsResearchEngineer}{
+\textbf{Research:} Multi-Agent Coordination, Token Efficiency, Evaluation Methodology \\
+\textbf{AI/ML:} LLM Orchestration, RAG, Prompt Engineering, Fine-tuning (LoRA, PEFT) \\
+\textbf{Tools:} PyTorch, Transformers, Weights \& Biases, OpenTelemetry \\
+\textbf{Languages:} Python, C++, Go, Rust
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% RESEARCH INTERESTS
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\researchInterests}{
+\begin{itemize}[leftmargin=*, nosep]
+\item Token efficiency optimization in multi-agent LLM coordination
+\item Evaluation methodology for autonomous agent systems
+\item Protocol design for agent-to-agent communication (A2A, MCP)
+\item Cognitive reasoning patterns in LLM architectures
+\end{itemize}
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% EXPERIENCE BULLET PRIORITY
+% ═══════════════════════════════════════════════════════════════════════════
+% AgentiCraft bullets to prioritize:
+% - ac_patterns (cognitive reasoning: CoT, ReAct, Tree-of-Thoughts)
+% - ac_protocols (A2A, MCP, optimization)
+
+% Visual Arena bullets to prioritize:
+% - va_simulation (benchmarking, 91% accuracy, methodology)
+
+% Smoove bullets to prioritize:
+% - sm_evaluation (LLM-as-judge, quality metrics)
+% - sm_rag (systematic evaluation)
+
+% ═══════════════════════════════════════════════════════════════════════════
+% USAGE
+% ═══════════════════════════════════════════════════════════════════════════
+% This template is selected when job description contains:
+% - "research engineer" or "applied scientist"
+% - "evaluation" or "benchmarking"
+% - "experiments" or "methodology"
+% - "papers" or "publications"
+% - Academic or research lab positions
+
+% To generate variant:
+% 1. Copy this file to variants/generated/{company}_{role}_{date}.tex
+% 2. Run tailoring script to inject job-specific keywords
+% 3. Compile with: pdflatex -interaction=nonstopmode variant.tex (run twice)

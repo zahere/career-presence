@@ -1,0 +1,152 @@
+# Target Companies Configuration
+# Used for job discovery prioritization and auto-apply rules
+
+version: "1.0"
+last_updated: "2025-02-04"
+
+# Company tiers determine auto-apply behavior
+# tier1/tier2: Auto-apply enabled when ATS >= 85%
+# tier3: Requires manual confirmation
+
+tiers:
+  tier1:  # Dream companies - highest priority
+    companies:
+      - name: "Anthropic"
+        careers_url: "https://www.anthropic.com/careers"
+        greenhouse_id: "anthropic"
+        priority: 1
+        notes: "Focus on AI safety and research roles"
+
+      - name: "OpenAI"
+        careers_url: "https://openai.com/careers"
+        greenhouse_id: "openai"
+        priority: 1
+
+      - name: "Google DeepMind"
+        careers_url: "https://deepmind.google/careers/"
+        priority: 1
+        notes: "Research Engineer roles"
+
+      - name: "Meta AI"
+        careers_url: "https://ai.meta.com/join-us/"
+        priority: 1
+
+  tier2:  # Strong interest - auto-apply enabled
+    companies:
+      - name: "Databricks"
+        careers_url: "https://www.databricks.com/company/careers"
+        greenhouse_id: "databricks"
+        priority: 2
+
+      - name: "Scale AI"
+        careers_url: "https://scale.com/careers"
+        lever_id: "scale"
+        priority: 2
+
+      - name: "Cohere"
+        careers_url: "https://cohere.com/careers"
+        greenhouse_id: "cohere"
+        priority: 2
+
+      - name: "Hugging Face"
+        careers_url: "https://huggingface.co/jobs"
+        greenhouse_id: "huggingface"
+        priority: 2
+
+      - name: "Weights & Biases"
+        careers_url: "https://wandb.ai/careers"
+        greenhouse_id: "wandb"
+        priority: 2
+
+      - name: "Mistral AI"
+        careers_url: "https://mistral.ai/careers"
+        priority: 2
+
+      - name: "Reka AI"
+        careers_url: "https://www.reka.ai/careers"
+        priority: 2
+
+  tier3:  # Good opportunities - requires confirmation
+    companies:
+      - name: "Vercel"
+        careers_url: "https://vercel.com/careers"
+        greenhouse_id: "vercel"
+        priority: 3
+
+      - name: "Supabase"
+        careers_url: "https://supabase.com/careers"
+        ashby_id: "supabase"
+        priority: 3
+
+      - name: "Modal"
+        careers_url: "https://modal.com/careers"
+        priority: 3
+
+      - name: "Anyscale"
+        careers_url: "https://www.anyscale.com/careers"
+        greenhouse_id: "anyscale"
+        priority: 3
+
+      - name: "Replicate"
+        careers_url: "https://replicate.com/about"
+        priority: 3
+
+      - name: "Together AI"
+        careers_url: "https://www.together.ai/careers"
+        priority: 3
+
+      - name: "Groq"
+        careers_url: "https://groq.com/careers/"
+        priority: 3
+
+# Exclusion list - never apply
+exclusions:
+  companies: []
+  keywords:
+    - "unpaid"
+    - "intern only"
+  reasons:
+    # company: "reason"
+
+# Target role keywords
+target_roles:
+  primary:
+    - "AI Engineer"
+    - "ML Engineer"
+    - "Machine Learning Engineer"
+    - "AI Infrastructure Engineer"
+    - "LLM Engineer"
+    - "MLOps Engineer"
+  secondary:
+    - "Platform Engineer"
+    - "Research Engineer"
+    - "Founding Engineer"
+    - "Staff Engineer"
+    - "Senior Software Engineer - AI/ML"
+
+# Search parameters
+search_params:
+  locations:
+    preferred:
+      - "Remote"
+      - "Tel Aviv, Israel"
+    acceptable:
+      - "San Francisco, CA"
+      - "New York, NY"
+      - "London, UK"
+      - "Berlin, Germany"
+      - "Amsterdam, Netherlands"
+
+  experience_levels:
+    - "mid_senior"
+    - "senior"
+    - "lead"
+
+  job_types:
+    - "full_time"
+
+  posted_within: "7d"  # Only jobs posted in last 7 days
+
+  salary:
+    minimum_usd: 150000
+    currency: "USD"

@@ -1,0 +1,70 @@
+% Platform Engineer Resume Template
+% Optimized for: Platform Engineer, Infrastructure Engineer, DevOps roles
+% Lead with: Infrastructure, Kubernetes, distributed systems
+
+\input{../base/master.tex}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TEMPLATE-SPECIFIC CONFIGURATION
+% ═══════════════════════════════════════════════════════════════════════════
+
+% Priority keywords for this template
+% Kubernetes, infrastructure, platform, distributed systems, DevOps, CI/CD
+
+% Section ordering for Platform Engineer roles:
+% 1. Professional Summary (Infrastructure-focused)
+% 2. Technical Skills (Infrastructure first)
+% 3. Experience (Infrastructure achievements first)
+% 4. Projects
+% 5. Education
+
+% ═══════════════════════════════════════════════════════════════════════════
+% PROFESSIONAL SUMMARY VARIANT
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\summaryPlatformEngineer}{
+Platform Engineer with deep expertise in building scalable, resilient infrastructure
+for AI/ML workloads. Architected enterprise-grade service mesh with 27 integrated
+services achieving <150ms p99 latency and 100+ concurrent agent support. Built
+end-to-end MLOps pipelines on Kubernetes with <2-minute deployment cycles.
+Experienced in distributed systems handling 10,000+ concurrent simulations.
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% SKILLS ORDERING FOR PLATFORM ENGINEER
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand{\skillsPlatformEngineer}{
+\textbf{Infrastructure:} Kubernetes, Docker, Terraform, AWS, GCP, ArgoCD, Helm \\
+\textbf{Observability:} OpenTelemetry, Prometheus, Grafana, Distributed Tracing \\
+\textbf{Languages:} Python, Go, Rust, C++, TypeScript \\
+\textbf{AI/ML:} LLMOps, Multi-Agent Systems, Model Serving, RAG
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% EXPERIENCE BULLET PRIORITY
+% ═══════════════════════════════════════════════════════════════════════════
+% AgentiCraft bullets to prioritize:
+% - ac_service_mesh (4-tier service mesh, 27 services)
+% - ac_security (9-layer security architecture)
+% - ac_craft_api (OpenTelemetry, observability)
+
+% Visual Arena bullets to prioritize:
+% - va_mlops (Kubernetes, CI/CD, <2-minute deployment)
+% - va_distributed (10,000+ concurrent, 52% memory reduction)
+
+% Smoove bullets to prioritize:
+% - sm_optimization (Redis, latency reduction)
+
+% ═══════════════════════════════════════════════════════════════════════════
+% USAGE
+% ═══════════════════════════════════════════════════════════════════════════
+% This template is selected when job description contains:
+% - "platform engineer" or "infrastructure engineer"
+% - "Kubernetes" or "K8s"
+% - "DevOps" or "SRE"
+% - "distributed systems"
+% - Heavy emphasis on scalability, reliability
+
+% To generate variant:
+% 1. Copy this file to variants/generated/{company}_{role}_{date}.tex
+% 2. Run tailoring script to inject job-specific keywords
+% 3. Compile with: pdflatex -interaction=nonstopmode variant.tex (run twice)
