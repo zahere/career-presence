@@ -28,8 +28,8 @@ docs/DIGITAL_PRESENCE_EXPANSION.md
 materials/agenticraft_overview.md
 
 # Website content (contains personal info - generated from master_profile)
-website/src/content/*.md
-!website/src/content/*.example.md
+website/src/data/pages/*.md
+!website/src/data/pages/*.example.md
 
 # GitHub repos (personal project documentation)
 github/repos/*
