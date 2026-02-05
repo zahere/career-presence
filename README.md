@@ -122,53 +122,53 @@ uv run cps discover "AI Engineer" --location "remote" --limit 20
 
 ```bash
 # Discover jobs across platforms
-cps discover "Software Engineer" --location "San Francisco" --limit 50
+uv run cps discover "Software Engineer" --location "San Francisco" --limit 50
 
 # Analyze a specific job posting
-cps analyze "https://example.com/job/12345"
+uv run cps analyze "https://example.com/job/12345"
 
 # Generate tailored resume variant
-cps tailor JOB_ID
+uv run cps tailor JOB_ID
 
 # Score resume against job description
-cps ats-score resume.pdf --job-description job.txt
+uv run cps ats-score resume.pdf --job-text "Job description here"
 
 # Submit application (requires confirmation)
-cps apply JOB_ID --confirm
+uv run cps apply JOB_ID --confirm
 ```
 
 ### Configuration
 
 ```bash
 # Validate all config files
-cps validate
+uv run cps validate
 ```
 
 ### Application Tracking
 
 ```bash
 # View pipeline status
-cps status
+uv run cps status
 
 # Update application status
-cps track APP_ID applied "Submitted via company portal"
-cps track APP_ID interview "Phone screen scheduled"
-cps track APP_ID offer "Received offer!"
+uv run cps track APP_ID applied "Submitted via company portal"
+uv run cps track APP_ID interview "Phone screen scheduled"
+uv run cps track APP_ID offer "Received offer!"
 ```
 
 ### Platform Sync
 
 ```bash
 # Sync all platforms from master_profile.yaml
-cps sync all
+uv run cps sync all
 
 # Sync specific platform
-cps sync linkedin
-cps sync github
-cps sync resume
+uv run cps sync linkedin
+uv run cps sync github
+uv run cps sync resume
 
 # Prepare all platforms for a specific job
-cps prepare JOB_ID
+uv run cps prepare JOB_ID
 ```
 
 ---

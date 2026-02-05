@@ -111,9 +111,9 @@ discover = "scripts.discovery.job_searcher:main"
 track = "scripts.tracking.tracker:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/career-presence"
-Documentation = "https://github.com/yourusername/career-presence#readme"
-Repository = "https://github.com/yourusername/career-presence"
+Homepage = "https://github.com/zahere/career-presence"
+Documentation = "https://github.com/zahere/career-presence#readme"
+Repository = "https://github.com/zahere/career-presence"
 
 [build-system]
 requires = ["hatchling"]
