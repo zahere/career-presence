@@ -12,9 +12,16 @@ from datetime import datetime
 from pathlib import Path
 
 import typer
+import yaml
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+# Load credentials from config/credentials.env if it exists
+_credentials_path = Path("config/credentials.env")
+if _credentials_path.exists():
+    load_dotenv(_credentials_path)
 
 app = typer.Typer(
     name="cps",
@@ -22,6 +29,48 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 console = Console()
+
+
+def _load_profile() -> dict:
+    """Load master_profile.yaml for dynamic defaults."""
+    profile_path = Path("config/master_profile.yaml")
+    if profile_path.exists():
+        with open(profile_path) as f:
+            data = yaml.safe_load(f)
+        return data if isinstance(data, dict) else {}
+    return {}
+
+
+def _build_default_job_description() -> str:
+    """Build a default job description from profile skills and target roles."""
+    profile = _load_profile()
+    parts = []
+
+    # Add target roles
+    target_roles = profile.get("personal", {}).get("headlines", {}).get("resume", "")
+    if target_roles:
+        parts.append(f"{target_roles} position requiring:")
+
+    # Add skills from categories
+    categories = profile.get("skills", {}).get("categories", [])
+    for cat in categories:
+        skill_names = [s["name"] for s in cat.get("skills", [])[:5]]
+        if skill_names:
+            parts.append(f"- {', '.join(skill_names)}")
+
+    if parts:
+        return "\n".join(parts)
+
+    # Fallback
+    return """
+    AI Engineer / ML Engineer position requiring:
+    - Python programming
+    - Machine learning / deep learning
+    - Kubernetes, Docker
+    - LLM, NLP experience
+    - Distributed systems
+    - 5+ years experience
+    """
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -222,17 +271,9 @@ def ats_score(
         elif job_text:
             job_description = job_text
         else:
-            # Use a generic AI/ML job description for baseline scoring
-            job_description = """
-            AI Engineer / ML Engineer position requiring:
-            - Python programming
-            - Machine learning / deep learning
-            - Kubernetes, Docker
-            - LLM, NLP experience
-            - Distributed systems
-            - 5+ years experience
-            """
-            console.print("[yellow]Using generic AI/ML job description for scoring[/yellow]")
+            # Build job description from profile skills and target roles
+            job_description = _build_default_job_description()
+            console.print("[yellow]Using profile-based job description for scoring[/yellow]")
 
         # Score the resume
         if resume_path.suffix.lower() == ".pdf":

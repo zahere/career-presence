@@ -1,13 +1,14 @@
 """Tests for ATS Scorer module."""
 
-import pytest
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import pytest
 
 # Add scripts to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
-from analysis.ats_scorer import ATSScorer, ATSScore, generate_report
+from analysis.ats_scorer import ATSScore, ATSScorer, generate_report
 
 
 class TestATSScorer:
@@ -102,12 +103,13 @@ class TestATSScorer:
         score, found, missing = scorer._score_sections(resume_lower)
 
         # Should detect key sections
-        assert "experience" in found or "professional experience" in found, \
+        assert "experience" in found or "professional experience" in found, (
             "Should detect experience section"
-        assert "education" in found or "academic background" in found, \
+        )
+        assert "education" in found or "academic background" in found, (
             "Should detect education section"
-        assert "technical skills" in found or "skills" in found, \
-            "Should detect skills section"
+        )
+        assert "technical skills" in found or "skills" in found, "Should detect skills section"
 
         # Score should be between 0 and 20
         assert 0 <= score <= 20, f"Section score should be 0-20, got {score}"
@@ -121,10 +123,11 @@ class TestATSScorer:
 
         # Should find various metrics in the sample resume
         # Expected: 116, 27, 32%, <150ms, 100+, 91%, <2-minute, etc.
-        assert len(metrics_found) >= 3, f"Should find multiple metrics, found {len(metrics_found)}: {metrics_found}"
+        assert len(metrics_found) >= 3, (
+            f"Should find multiple metrics, found {len(metrics_found)}: {metrics_found}"
+        )
 
         # Check for specific metric patterns
-        metrics_str = " ".join(metrics_found)
         assert any("%" in m for m in metrics_found), "Should find percentage metrics"
 
         # Score should be between 0 and 20
@@ -139,16 +142,19 @@ class TestATSScorer:
 
         # Check total score is sum of components
         expected_total = int(
-            result.keyword_score +
-            result.section_score +
-            result.metrics_score +
-            result.formatting_score
+            result.keyword_score
+            + result.section_score
+            + result.metrics_score
+            + result.formatting_score
         )
-        assert result.total_score == expected_total, \
+        assert result.total_score == expected_total, (
             f"Total score {result.total_score} should equal sum of components {expected_total}"
+        )
 
         # Total should be 0-100
-        assert 0 <= result.total_score <= 100, f"Total score should be 0-100, got {result.total_score}"
+        assert 0 <= result.total_score <= 100, (
+            f"Total score should be 0-100, got {result.total_score}"
+        )
 
         # Check recommendation is set based on score
         if result.total_score >= 85:
@@ -263,8 +269,9 @@ class TestATSFormatting:
         score2, issues2 = scorer._score_formatting(bad_text)
 
         assert score1 > score2, "Longer extractable text should score better"
-        assert any("short" in issue.lower() or "extractable" in issue.lower()
-                   for issue in issues2), "Should flag short/non-extractable text"
+        assert any(
+            "short" in issue.lower() or "extractable" in issue.lower() for issue in issues2
+        ), "Should flag short/non-extractable text"
 
     def test_encoding_issues(self, scorer):
         """Test detection of encoding problems."""
@@ -272,8 +279,7 @@ class TestATSFormatting:
         bad_encoding = "Resume with encoding issues: � and \\x00"
         score, issues = scorer._score_formatting(bad_encoding)
 
-        assert any("encoding" in issue.lower() for issue in issues), \
-            "Should detect encoding issues"
+        assert any("encoding" in issue.lower() for issue in issues), "Should detect encoding issues"
 
     def test_bullet_points(self, scorer):
         """Test detection of bullet point formatting."""
@@ -316,7 +322,7 @@ class TestATSReport:
             sections_missing=["projects"],
             metrics_found=["50%", "5+ years", "$100K"],
             formatting_issues=[],
-            recommendation="ready"
+            recommendation="ready",
         )
 
         report = generate_report(score)

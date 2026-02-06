@@ -19,6 +19,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 class PostType(Enum):
     TECHNICAL_INSIGHT = "technical_insight"
@@ -58,14 +60,13 @@ class LinkedInContentManager:
     Manages LinkedIn content creation and scheduling.
     """
 
-    HASHTAG_SETS = {
+    _DEFAULT_HASHTAG_SETS: dict[str, list[str]] = {
         "primary": ["#AI", "#MachineLearning", "#LLM"],
         "secondary": ["#MultiAgentSystems", "#AIEngineering", "#MLOps", "#BuildInPublic"],
         "niche": ["#RAG", "#LLMOps", "#Kubernetes", "#DistributedSystems"],
     }
 
-    # Content hooks (attention grabbers) - merged from content_generator.py
-    HOOKS = {
+    _DEFAULT_HOOKS: dict[str, list[str]] = {
         "multi_agent": [
             "Multi-agent systems don't fail gracefully. They fail spectacularly.",
             "The hardest part of building agent systems isn't the AI. It's everything else.",
@@ -83,6 +84,74 @@ class LinkedInContentManager:
             "What I wish I knew before my first AI job",
             "Why I left a stable job to build my own project",
         ],
+    }
+
+    _DEFAULT_TOPIC_SUGGESTIONS: dict[str, list[str]] = {
+        "technical_insight": [
+            "Multi-agent coordination patterns",
+            "Token efficiency in LLM systems",
+            "Service mesh for AI platforms",
+            "RAG optimization techniques",
+            "LLMOps best practices",
+        ],
+        "build_in_public": [
+            "Project weekly update",
+            "New feature implementation",
+            "Architecture decision",
+            "Performance optimization",
+            "User feedback integration",
+        ],
+        "industry_commentary": [
+            "Latest agent framework comparison",
+            "AI infrastructure trends",
+            "Production AI challenges",
+            "Research paper discussion",
+            "Tool/framework review",
+        ],
+        "career_update": [
+            "Job search progress",
+            "Skill development",
+            "Milestone celebration",
+            "Learning reflection",
+            "Community involvement",
+        ],
+    }
+
+    _DEFAULT_POST_IDEAS: dict[str, list[str]] = {
+        "technical_insight": [
+            "What I learned building a 27-service mesh for LLM coordination",
+            "Why we achieved 32% cost reduction with intelligent provider routing",
+            "The 9-layer security architecture for AI in regulated environments",
+            "How A2A and MCP protocols reduced our redundant LLM calls by 45%",
+            "Building evaluation frameworks with LLM-as-judge methodology",
+        ],
+        "build_in_public": [
+            "Week N: Implementing circuit breaker patterns in the project",
+            "How we scaled to 100+ concurrent agents with <150ms latency",
+            "Designing the Craft API for developer experience",
+            "Our journey to 116 composable patterns",
+            "Building observability into multi-agent systems",
+        ],
+        "industry_commentary": [
+            "Hot take: Most agent frameworks are solving the wrong problem",
+            "Why I think multi-agent coordination will define the next AI era",
+            "The hidden complexity of production LLM systems",
+            "What LangChain and CrewAI get wrong about multi-agent systems",
+            "The case for protocol-native agent coordination",
+        ],
+    }
+
+    _DEFAULT_HEADLINE_TEMPLATES: dict[str, str] = {
+        "research": "AI Research Engineer | Multi-Agent Systems | NeurIPS 2026 Submission",
+        "founding": "AI/ML Founding Engineer | Built [Project] from 0 → production | Open to early-stage",
+        "platform": "AI Platform Engineer | Multi-Agent Infrastructure | 27 services, <150ms p99",
+        "default": "AI Infrastructure Engineer | Building [Project] | Open to Opportunities",
+    }
+
+    _DEFAULT_CONNECTION_TEMPLATES: dict[str, str] = {
+        "recruiter": "Hi {first_name}, I saw {company} is hiring for {role} roles. I've been building enterprise-grade AI systems and would love to learn more! Best regards",
+        "hiring_manager": "Hi {first_name}, Just applied for the {role} role at {company}. My experience building production AI systems aligns well. Would love to connect!",
+        "peer": "Hi {first_name}, I came across your work as {role} at {company} — impressive! I'm building AI coordination systems and working on similar problems. Would love to exchange ideas!",
     }
 
     POST_TEMPLATES = {
@@ -187,6 +256,14 @@ Thanks to everyone who's been part of this journey.
 
     def __init__(self, project_root: str = ".") -> None:
         self.root = Path(project_root)
+        self.profile_path = self.root / "config" / "master_profile.yaml"
+        self.profile = self._load_profile()
+
+        # Resolve profile-driven content with defaults
+        linkedin = self.profile.get("linkedin_content", {})
+        self.HASHTAG_SETS = linkedin.get("hashtags", self._DEFAULT_HASHTAG_SETS)
+        self.HOOKS = linkedin.get("hooks", self._DEFAULT_HOOKS)
+
         self.posts_dir = self.root / "linkedin" / "posts"
         self.posts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -199,6 +276,14 @@ Thanks to everyone who's been part of this journey.
 
         self.calendar_path = self.posts_dir / "content_calendar.json"
         self.analytics_path = self.root / "linkedin" / "analytics" / "engagement.json"
+
+    def _load_profile(self) -> dict[str, Any]:
+        """Load master profile for dynamic content."""
+        if self.profile_path.exists():
+            with open(self.profile_path) as f:
+                data = yaml.safe_load(f)
+            return data if isinstance(data, dict) else {}
+        return {}
 
     def create_post_draft(self, post_type: PostType, **kwargs: Any) -> LinkedInPost:
         """
@@ -378,69 +463,38 @@ Thanks to everyone who's been part of this journey.
 
     def _get_topic_suggestion(self, post_type: PostType) -> str:
         """Get topic suggestion based on post type."""
-        suggestions = {
-            PostType.TECHNICAL_INSIGHT: [
-                "Multi-agent coordination patterns",
-                "Token efficiency in LLM systems",
-                "Service mesh for AI platforms",
-                "RAG optimization techniques",
-                "LLMOps best practices",
-            ],
-            PostType.BUILD_IN_PUBLIC: [
-                "Project weekly update",
-                "New feature implementation",
-                "Architecture decision",
-                "Performance optimization",
-                "User feedback integration",
-            ],
-            PostType.INDUSTRY_COMMENTARY: [
-                "Latest agent framework comparison",
-                "AI infrastructure trends",
-                "Production AI challenges",
-                "Research paper discussion",
-                "Tool/framework review",
-            ],
-            PostType.CAREER_UPDATE: [
-                "Job search progress",
-                "Skill development",
-                "Milestone celebration",
-                "Learning reflection",
-                "Community involvement",
-            ],
-        }
+        profile_suggestions = self.profile.get("linkedin_content", {}).get("topic_suggestions", {})
 
-        return random.choice(suggestions.get(post_type, ["General update"]))
+        # Map PostType enum to profile key
+        type_key = post_type.value  # e.g. "technical_insight"
+
+        # Try profile first, then defaults
+        suggestions = profile_suggestions.get(
+            type_key,
+            self._DEFAULT_TOPIC_SUGGESTIONS.get(type_key, ["General update"]),
+        )
+
+        result: str = random.choice(suggestions)
+        return result
 
     def get_post_ideas(self, post_type: PostType | None = None) -> list[str]:
         """Generate post ideas based on project and career context."""
-        ideas = {
-            PostType.TECHNICAL_INSIGHT: [
-                "What I learned building a 27-service mesh for LLM coordination",
-                "Why we achieved 32% cost reduction with intelligent provider routing",
-                "The 9-layer security architecture for AI in regulated environments",
-                "How A2A and MCP protocols reduced our redundant LLM calls by 45%",
-                "Building evaluation frameworks with LLM-as-judge methodology",
-            ],
-            PostType.BUILD_IN_PUBLIC: [
-                "Week N: Implementing circuit breaker patterns in the project",
-                "How we scaled to 100+ concurrent agents with <150ms latency",
-                "Designing the Craft API for developer experience",
-                "Our journey to 116 composable patterns",
-                "Building observability into multi-agent systems",
-            ],
-            PostType.INDUSTRY_COMMENTARY: [
-                "Hot take: Most agent frameworks are solving the wrong problem",
-                "Why I think multi-agent coordination will define the next AI era",
-                "The hidden complexity of production LLM systems",
-                "What LangChain and CrewAI get wrong about multi-agent systems",
-                "The case for protocol-native agent coordination",
-            ],
-        }
+        profile_ideas = self.profile.get("linkedin_content", {}).get("post_ideas", {})
+
+        # Build ideas dict merging profile with defaults
+        ideas: dict[PostType, list[str]] = {}
+        for pt in [
+            PostType.TECHNICAL_INSIGHT,
+            PostType.BUILD_IN_PUBLIC,
+            PostType.INDUSTRY_COMMENTARY,
+        ]:
+            type_key = pt.value
+            ideas[pt] = profile_ideas.get(type_key, self._DEFAULT_POST_IDEAS.get(type_key, []))
 
         if post_type:
             return ideas.get(post_type, [])
 
-        all_ideas = []
+        all_ideas: list[str] = []
         for type_ideas in ideas.values():
             all_ideas.extend(type_ideas)
         return all_ideas
@@ -485,23 +539,23 @@ Thanks to everyone who's been part of this journey.
         Returns:
             Dict with current, suggested, and reason
         """
+        templates = self.profile.get("linkedin_content", {}).get(
+            "headline_templates", self._DEFAULT_HEADLINE_TEMPLATES
+        )
         jd_lower = job_description.lower()
 
         # Check what to emphasize
         if "research" in jd_lower or "phd" in jd_lower:
-            suggested = "AI Research Engineer | Multi-Agent Systems | NeurIPS 2026 Submission"
+            suggested = templates.get("research", self._DEFAULT_HEADLINE_TEMPLATES["research"])
             reason = "Job emphasizes research; switching to research-focused headline"
         elif "founding" in jd_lower or "startup" in jd_lower or "0-to-1" in jd_lower:
-            suggested = "AI/ML Founding Engineer | Built [Project] from 0 → production | Open to early-stage"
+            suggested = templates.get("founding", self._DEFAULT_HEADLINE_TEMPLATES["founding"])
             reason = "Job is founding/startup role; emphasizing entrepreneurial experience"
         elif "platform" in jd_lower or "infrastructure" in jd_lower:
-            suggested = (
-                "AI Platform Engineer | Multi-Agent Infrastructure | 27 services, <150ms p99"
-            )
+            suggested = templates.get("platform", self._DEFAULT_HEADLINE_TEMPLATES["platform"])
             reason = "Job emphasizes platform; highlighting infrastructure experience"
         else:
-            # Default: job hunting mode
-            suggested = "AI Infrastructure Engineer | Building [Project] | Open to Opportunities"
+            suggested = templates.get("default", self._DEFAULT_HEADLINE_TEMPLATES["default"])
             reason = "Switching to job hunting headline for visibility"
 
         return {"current": current_headline, "suggested": suggested, "reason": reason}
@@ -521,28 +575,19 @@ Thanks to everyone who's been part of this journey.
         Returns:
             Connection request message (max 300 chars)
         """
+        templates: dict[str, str] = self.profile.get("linkedin_content", {}).get(
+            "connection_templates", self._DEFAULT_CONNECTION_TEMPLATES
+        )
         first_name = person_name.split()[0] if person_name else "there"
 
-        if context == "recruiter":
-            message = f"""Hi {first_name},
-
-I saw {company} is hiring for {person_role} roles. I've been building enterprise-grade AI systems and would love to learn more!
-
-Best regards"""
-
-        elif context == "hiring_manager":
-            message = f"""Hi {first_name},
-
-Just applied for the {person_role} role at {company}. My experience building production AI systems aligns well.
-
-Would love to connect!"""
-
-        else:  # peer
-            message = f"""Hi {first_name},
-
-I came across your work as {person_role} at {company} — impressive! I'm building AI coordination systems and working on similar problems.
-
-Would love to exchange ideas!"""
+        template: str = templates.get(
+            context, templates.get("peer", self._DEFAULT_CONNECTION_TEMPLATES["peer"])
+        )
+        message = template.format(
+            first_name=first_name,
+            company=company,
+            role=person_role,
+        )
 
         # Ensure under 300 chars
         if len(message) > 300:
@@ -552,8 +597,9 @@ Would love to exchange ideas!"""
 
     def get_hook(self, topic: str = "multi_agent") -> str:
         """Get a random attention-grabbing hook for a topic."""
-        hooks = self.HOOKS.get(topic, self.HOOKS["multi_agent"])
-        return random.choice(hooks)
+        hooks: list[str] = self.HOOKS.get(topic, self.HOOKS["multi_agent"])
+        result: str = random.choice(hooks)
+        return result
 
 
 def main() -> None:

@@ -162,10 +162,11 @@ uv run cps track APP_ID offer "Received offer!"
 # Sync all platforms from master_profile.yaml
 uv run cps sync all
 
-# Sync specific platform
+# Sync specific platform (resume sync auto-compiles PDF)
+uv run cps sync resume
 uv run cps sync linkedin
 uv run cps sync github
-uv run cps sync resume
+uv run cps sync website
 
 # Prepare all platforms for a specific job
 uv run cps prepare JOB_ID
@@ -194,7 +195,13 @@ career-presence/
 │   ├── tracking/            # Application tracking, deduplication
 │   ├── validation/          # Pydantic config validation
 │   ├── sync/                # Platform synchronization
-│   └── ...
+│   ├── linkedin/            # LinkedIn content strategy
+│   └── website/             # Astro website generator
+├── website/                 # Astro portfolio site
+│   ├── src/pages/           # Page components (.astro)
+│   ├── src/layouts/         # Layout components
+│   ├── src/content/pages/   # Generated markdown (gitignored)
+│   └── src/config/          # Site config (gitignored)
 ├── mcp-servers/
 │   └── jobspy-mcp-server/   # Custom job search MCP
 ├── resume/
@@ -206,7 +213,7 @@ career-presence/
 │   ├── discovered/          # Raw job data (gitignored)
 │   ├── analyzed/            # Processed jobs (gitignored)
 │   └── applied/             # Application records (gitignored)
-└── tests/                   # Test suite
+└── tests/                   # Test suite (131 tests)
 ```
 
 ---
@@ -292,6 +299,27 @@ application_answers:
   salary_expectation: "150000"
   custom_answers:
     "How did you hear about us?": "LinkedIn"
+
+# Platform-specific content (overrides hardcoded defaults)
+website_content:
+  what_i_do: "Description of what you do..."
+  current_focus: ["Focus area 1", "Focus area 2"]
+  blog_description: "Blog description..."
+  contact_intro: "Contact page intro..."
+
+linkedin_content:
+  hashtags: { primary: [...], secondary: [...] }
+  hooks: { category: ["Hook 1", "Hook 2"] }
+  headline_templates: { role_type: "Template..." }
+  connection_templates: { context: "Template with {first_name}..." }
+
+github_content:
+  connect_interests: ["Interest 1", "Interest 2"]
+  footer_quote: "Footer quote for README..."
+
+resume_content:
+  summaries_by_role: { role_type: "Summary..." }
+  headlines_by_role: { role_type: "Headline..." }
 ```
 
 ### credentials.env

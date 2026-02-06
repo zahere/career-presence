@@ -69,6 +69,18 @@ class WebsiteGenerator:
         self.output_dir = Path(output_dir)
         self.generator = "astro"  # Default
 
+    def _get_website_content(self, key: str, default: str = "") -> str:
+        """Get a value from the website_content profile section."""
+        value: str = self.profile.get("website_content", {}).get(key, default)
+        return value
+
+    def _format_current_focus(self) -> str:
+        """Format current focus items as markdown list."""
+        items = self.profile.get("website_content", {}).get("current_focus", [])
+        if not items:
+            return "- Working on exciting projects"
+        return "\n".join(f"- {item}" for item in items)
+
     def generate_homepage_content(self) -> str:
         """Generate homepage markdown/MDX content."""
         personal = self.profile["personal"]
@@ -87,12 +99,10 @@ description: "{personal["tagline"]}"
 
 ## What I Do
 
-I specialize in building production-grade AI systems that bridge the gap between cutting-edge research and real-world deployment.
+{self._get_website_content("what_i_do", "I specialize in building production-grade AI systems.")}
 
 ### Current Focus
-- Building enterprise multi-agent coordination platforms
-- Researching token efficiency in multi-agent LLM coordination
-- Exploring protocol-native MCP and A2A integration
+{self._format_current_focus()}
 
 [View My Projects](/projects) · [Download Resume](/resume.pdf) · [Get In Touch](/contact)
 """
@@ -121,7 +131,7 @@ description: "Learn more about {personal["name"]["full"]}"
 
 ## Background
 
-{personal["name"]["first"]} is an AI Infrastructure Engineer based in {personal["contact"]["location"]}.
+{personal["name"]["first"]} is {personal["headlines"].get("about", personal["headlines"]["website"])} based in {personal["contact"]["location"]}.
 
 ## Education
 
@@ -243,7 +253,7 @@ description: "Get in touch"
 
 # Get In Touch
 
-I'm always interested in hearing about new opportunities, collaborations, or just connecting with fellow builders in the AI space.
+{self._get_website_content("contact_intro", "I'm always interested in hearing about new opportunities and collaborations.")}
 
 ## Reach Out
 
@@ -255,7 +265,7 @@ I'm always interested in hearing about new opportunities, collaborations, or jus
 
 Based in {personal["contact"]["location"]} ({personal["contact"]["timezone"]})
 
-Open to remote opportunities worldwide.
+{self._get_website_content("location_openness", "Open to remote opportunities worldwide.")}
 
 ---
 
@@ -264,14 +274,26 @@ Open to remote opportunities worldwide.
 
     def generate_blog_index(self) -> str:
         """Generate blog index page."""
-        return """---
+        blog_description = self._get_website_content(
+            "blog_description", "Technical writing and thoughts."
+        )
+        blog_topics = self.profile.get("website_content", {}).get("blog_topics", [])
+        if not blog_topics:
+            blog_topics = [
+                "Technical topics",
+                "Industry insights",
+                "Career reflections",
+            ]
+        topics_list = "\n".join(f"- {topic}" for topic in blog_topics)
+
+        return f"""---
 title: "Blog"
 description: "Technical writing and thoughts"
 ---
 
 # Blog
 
-Thoughts on AI infrastructure, multi-agent systems, and building production-ready AI.
+{blog_description}
 
 ## Recent Posts
 
@@ -281,28 +303,34 @@ Thoughts on AI infrastructure, multi-agent systems, and building production-read
 
 ## Topics I Write About
 
-- Multi-agent coordination patterns
-- Production LLM systems
-- MLOps and infrastructure
-- Building AI systems
-- Career in AI engineering
+{topics_list}
 """
 
     def generate_astro_config(self) -> str:
         """Generate Astro configuration file."""
-        return """import { defineConfig } from 'astro/config';
+        domain = self.profile.get("personal", {}).get("social", {}).get(
+            "website", ""
+        ) or self.profile.get("website", {}).get("domain", "")
+        site_url = (
+            domain
+            if domain.startswith("http")
+            else f"https://{domain}"
+            if domain
+            else "https://yourwebsite.com"
+        )
+        return f"""import {{ defineConfig }} from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
 
-export default defineConfig({
-  site: 'https://yourwebsite.com',
+export default defineConfig({{
+  site: '{site_url}',
   integrations: [tailwind(), mdx()],
-  markdown: {
-    shikiConfig: {
+  markdown: {{
+    shikiConfig: {{
       theme: 'github-dark',
-    },
-  },
-});
+    }},
+  }},
+}});
 """
 
     def generate_tailwind_config(self) -> str:
@@ -434,12 +462,30 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 """
 
+    def _generate_site_config(self) -> str:
+        """Generate site.config.ts with personal data (gitignored)."""
+        personal = self.profile["personal"]
+        return f"""// Auto-generated from master_profile.yaml — DO NOT commit this file
+export const siteConfig = {{
+  name: "{personal["name"]["full"]}",
+  shortName: "{personal["name"]["first"]}",
+  tagline: "{personal["tagline"]}",
+  social: {{
+    linkedin: "{personal["social"]["linkedin"]}",
+    github: "{personal["social"]["github"]}",
+    email: "{personal["contact"]["email"]}",
+  }},
+}};
+"""
+
     def generate_all(self) -> Path:
         """Generate complete website structure."""
         # Create directories
         dirs = [
             self.output_dir / "src" / "pages",
             self.output_dir / "src" / "layouts",
+            self.output_dir / "src" / "config",
+            self.output_dir / "src" / "content" / "pages",
             self.output_dir / "src" / "content" / "blog",
             self.output_dir / "public",
         ]
@@ -447,16 +493,23 @@ import Layout from '../layouts/Layout.astro';
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
 
-        # Generate configuration files
-        (self.output_dir / "astro.config.mjs").write_text(self.generate_astro_config())
-        (self.output_dir / "tailwind.config.mjs").write_text(self.generate_tailwind_config())
-
-        # Generate layout
-        (self.output_dir / "src" / "layouts" / "Layout.astro").write_text(
-            self.generate_layout_component()
+        # Generate site config with personal data (gitignored)
+        (self.output_dir / "src" / "config" / "site.config.ts").write_text(
+            self._generate_site_config()
         )
 
-        # Generate pages
+        # Only write scaffold files if they don't already exist (avoid overwriting tracked files)
+        scaffold_files = {
+            self.output_dir / "astro.config.mjs": self.generate_astro_config,
+            self.output_dir / "tailwind.config.mjs": self.generate_tailwind_config,
+            self.output_dir / "src" / "layouts" / "Layout.astro": self.generate_layout_component,
+        }
+
+        for path, generator in scaffold_files.items():
+            if not path.exists():
+                path.write_text(generator())
+
+        # Generate pages (content directory is gitignored)
         pages = {
             "index": ("Home", self.generate_homepage_content()),
             "about": ("About", self.generate_about_page()),
@@ -468,25 +521,29 @@ import Layout from '../layouts/Layout.astro';
         }
 
         for page_name, (_title, content) in pages.items():
-            # Save as markdown in content directory
-            content_path = self.output_dir / "src" / "content" / f"{page_name}.md"
+            content_path = self.output_dir / "src" / "content" / "pages" / f"{page_name}.md"
             content_path.write_text(content)
 
-        # Generate package.json
-        package_json = {
-            "name": "portfolio-website",
-            "type": "module",
-            "version": "1.0.0",
-            "scripts": {"dev": "astro dev", "build": "astro build", "preview": "astro preview"},
-            "dependencies": {
-                "astro": "^4.0.0",
-                "@astrojs/tailwind": "^5.0.0",
-                "@astrojs/mdx": "^2.0.0",
-                "tailwindcss": "^3.4.0",
-            },
-        }
-
-        (self.output_dir / "package.json").write_text(json.dumps(package_json, indent=2))
+        # Only write package.json if it doesn't exist
+        package_path = self.output_dir / "package.json"
+        if not package_path.exists():
+            package_json = {
+                "name": "portfolio-website",
+                "type": "module",
+                "version": "1.0.0",
+                "scripts": {
+                    "dev": "astro dev",
+                    "build": "astro build",
+                    "preview": "astro preview",
+                },
+                "dependencies": {
+                    "astro": "^4.0.0",
+                    "@astrojs/tailwind": "^5.0.0",
+                    "@astrojs/mdx": "^2.0.0",
+                    "tailwindcss": "^3.4.0",
+                },
+            }
+            package_path.write_text(json.dumps(package_json, indent=2))
 
         print(f"✅ Website generated in {self.output_dir}")
         print("\nNext steps:")

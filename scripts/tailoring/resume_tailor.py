@@ -15,6 +15,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 @dataclass
 class ResumeVariant:
@@ -36,19 +38,46 @@ class ResumeTailor:
     Generates tailored resume variants from base LaTeX resume
     """
 
+    _DEFAULT_SUMMARIES: dict[str, str] = {
+        "ai_engineer": r"""\small{AI Infrastructure Engineer specializing in production-grade multi-agent systems and enterprise AI platforms. Built enterprise platforms with composable patterns and integrated services, demonstrating expertise in agentic workflows, service mesh architecture, and LLMOps at scale. Proven track record building MLOps infrastructure and deploying AI systems in regulated environments with rigorous security requirements. Combines systems thinking with deep technical expertise to deliver scalable, production-ready AI platforms.}""",
+        "ml_engineer": r"""\small{Machine Learning Engineer with expertise in building production ML systems at scale. Led development of multi-agent LLM systems achieving 38\% improvement in behavioral realism and 91\% trajectory accuracy. Experienced in MLOps pipeline design, model serving infrastructure, and real-time inference optimization. Combines research engineering background with practical systems deployment experience.}""",
+        "platform_engineer": r"""\small{Platform Engineer specializing in ML infrastructure and distributed systems. Architected 4-tier service mesh with 27 integrated services, achieving <150ms p99 latency supporting 100+ concurrent agents. Expert in Kubernetes, CI/CD automation, and cloud-native architectures (AWS, GCP, Azure). Track record of reducing deployment cycles from hours to minutes while maintaining enterprise-grade security and compliance.}""",
+        "research_engineer": r"""\small{Research Engineer bridging academic rigor with production systems. Building protocol-native multi-agent coordination frameworks exploring token efficiency and mesh-native coordination. Background in experimental design, benchmarking, and systematic evaluation of ML systems. Combines research methodology with practical engineering to deliver reproducible, publishable results.}""",
+    }
+
+    _DEFAULT_HEADLINES: dict[str, str] = {
+        "ai engineer": "AI Infrastructure Engineer • Multi-Agent Systems Architect",
+        "ml engineer": "Machine Learning Engineer • AI Systems Builder",
+        "platform engineer": "Platform Engineer • ML Infrastructure Specialist",
+        "research engineer": "Research Engineer • AI Systems & Multi-Agent Coordination",
+        "staff engineer": "Staff Engineer • AI Infrastructure",
+        "founding engineer": "Founding Engineer • AI/ML Systems",
+    }
+
     def __init__(
         self,
         base_resume_path: str = "resume/base/master.tex",
         variants_dir: str = "resume/variants",
         exports_dir: str = "resume/exports",
+        profile_path: str = "config/master_profile.yaml",
     ):
         self.base_resume_path = Path(base_resume_path)
         self.variants_dir = Path(variants_dir)
         self.exports_dir = Path(exports_dir)
+        self.profile = self._load_profile(profile_path)
 
         # Ensure directories exist
         self.variants_dir.mkdir(parents=True, exist_ok=True)
         self.exports_dir.mkdir(parents=True, exist_ok=True)
+
+    def _load_profile(self, profile_path: str) -> dict[str, Any]:
+        """Load master profile for dynamic content."""
+        path = Path(profile_path)
+        if path.exists():
+            with open(path) as f:
+                data = yaml.safe_load(f)
+            return data if isinstance(data, dict) else {}
+        return {}
 
     def generate_variant(
         self, job_analysis: dict[str, Any], customizations: dict[str, Any] | None = None
@@ -152,13 +181,22 @@ class ResumeTailor:
     def _build_tailored_summary(self, keywords: list[str], role: str, _company: str) -> str:
         """Build a tailored professional summary using role and keywords context."""
 
-        # Base summary components
-        summaries = {
-            "ai_engineer": r"""\small{AI Infrastructure Engineer specializing in production-grade multi-agent systems and enterprise AI platforms. Built enterprise platforms with composable patterns and integrated services, demonstrating expertise in agentic workflows, service mesh architecture, and LLMOps at scale. Proven track record building MLOps infrastructure and deploying AI systems in regulated environments with rigorous security requirements. Combines systems thinking with deep technical expertise to deliver scalable, production-ready AI platforms.}""",
-            "ml_engineer": r"""\small{Machine Learning Engineer with expertise in building production ML systems at scale. Led development of multi-agent LLM systems achieving 38\% improvement in behavioral realism and 91\% trajectory accuracy. Experienced in MLOps pipeline design, model serving infrastructure, and real-time inference optimization. Combines research engineering background with practical systems deployment experience.}""",
-            "platform_engineer": r"""\small{Platform Engineer specializing in ML infrastructure and distributed systems. Architected 4-tier service mesh with 27 integrated services, achieving <150ms p99 latency supporting 100+ concurrent agents. Expert in Kubernetes, CI/CD automation, and cloud-native architectures (AWS, GCP, Azure). Track record of reducing deployment cycles from hours to minutes while maintaining enterprise-grade security and compliance.}""",
-            "research_engineer": r"""\small{Research Engineer bridging academic rigor with production systems. Building protocol-native multi-agent coordination frameworks exploring token efficiency and mesh-native coordination. Background in experimental design, benchmarking, and systematic evaluation of ML systems. Combines research methodology with practical engineering to deliver reproducible, publishable results.}""",
-        }
+        # Load summaries from profile, falling back to class defaults
+        profile_summaries = self.profile.get("resume_content", {}).get("summaries_by_role", {})
+
+        # Wrap profile summaries in LaTeX \small{} if they don't already have it
+        summaries: dict[str, str] = {}
+        for key, default in self._DEFAULT_SUMMARIES.items():
+            profile_val = profile_summaries.get(key)
+            if profile_val:
+                # Wrap in \small{} for LaTeX if not already wrapped
+                if not profile_val.strip().startswith(r"\small{"):
+                    # Escape LaTeX special chars in profile text
+                    profile_val = profile_val.replace("%", r"\%")
+                    profile_val = r"\small{" + profile_val.strip() + "}"
+                summaries[key] = profile_val
+            else:
+                summaries[key] = default
 
         # Use keywords to influence template selection when role title is ambiguous
         kw_lower = {kw.lower() for kw in keywords}
@@ -318,15 +356,11 @@ class ResumeTailor:
 
         role = job_analysis.get("role", "")
 
-        # Map common roles to appropriate headlines
-        headlines = {
-            "ai engineer": "AI Infrastructure Engineer • Multi-Agent Systems Architect",
-            "ml engineer": "Machine Learning Engineer • AI Systems Builder",
-            "platform engineer": "Platform Engineer • ML Infrastructure Specialist",
-            "research engineer": "Research Engineer • AI Systems & Multi-Agent Coordination",
-            "staff engineer": "Staff Engineer • AI Infrastructure",
-            "founding engineer": "Founding Engineer • AI/ML Systems",
-        }
+        # Load headlines from profile, falling back to class defaults
+        profile_headlines = self.profile.get("resume_content", {}).get("headlines_by_role", {})
+        headlines: dict[str, str] = {}
+        for key, default in self._DEFAULT_HEADLINES.items():
+            headlines[key] = profile_headlines.get(key.replace(" ", "_"), default)
 
         role_lower = role.lower()
         new_headline = headlines.get(role_lower)

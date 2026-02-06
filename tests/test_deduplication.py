@@ -1,9 +1,10 @@
 """Tests for applied jobs deduplication."""
 
-import pytest
 from datetime import datetime
 
-from scripts.tracking.tracker import ApplicationTracker, Application
+import pytest
+
+from scripts.tracking.tracker import Application, ApplicationTracker
 
 
 @pytest.fixture
@@ -53,8 +54,7 @@ class TestIsAlreadyApplied:
     def test_match_by_url(self, tracker, sample_application):
         tracker.add_application(sample_application)
         result = tracker.is_already_applied(
-            "Anthropic", "AI Engineer",
-            job_url="https://boards.greenhouse.io/anthropic/jobs/12345"
+            "Anthropic", "AI Engineer", job_url="https://boards.greenhouse.io/anthropic/jobs/12345"
         )
         assert result is not None
         assert result["id"] == "app_test_001"
@@ -116,8 +116,9 @@ class TestIsAlreadyApplied:
         """URL match should be found even with different company/role."""
         tracker.add_application(sample_application)
         result = tracker.is_already_applied(
-            "Different Company", "Different Role",
-            job_url="https://boards.greenhouse.io/anthropic/jobs/12345"
+            "Different Company",
+            "Different Role",
+            job_url="https://boards.greenhouse.io/anthropic/jobs/12345",
         )
         assert result is not None
 
@@ -145,7 +146,11 @@ class TestFilterAlreadyApplied:
         tracker.add_application(sample_application)
 
         jobs = [
-            {"company": "Anthropic", "title": "AI Engineer", "job_url": "https://boards.greenhouse.io/anthropic/jobs/12345"},
+            {
+                "company": "Anthropic",
+                "title": "AI Engineer",
+                "job_url": "https://boards.greenhouse.io/anthropic/jobs/12345",
+            },
             {"company": "OpenAI", "title": "ML Engineer", "job_url": "http://openai.com/jobs/1"},
         ]
 

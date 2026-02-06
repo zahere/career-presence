@@ -10,7 +10,6 @@ from scripts.discovery.job_searcher import (
     load_targets,
 )
 
-
 # ═══════════════════════════════════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════════════════════════════════
@@ -24,12 +23,20 @@ def base_config():
         "tiers": {
             "tier1": {
                 "companies": [
-                    {"name": "Anthropic", "careers_url": "https://anthropic.com/careers", "priority": 1},
+                    {
+                        "name": "Anthropic",
+                        "careers_url": "https://anthropic.com/careers",
+                        "priority": 1,
+                    },
                 ]
             },
             "tier2": {
                 "companies": [
-                    {"name": "Databricks", "careers_url": "https://databricks.com/careers", "priority": 2},
+                    {
+                        "name": "Databricks",
+                        "careers_url": "https://databricks.com/careers",
+                        "priority": 2,
+                    },
                 ]
             },
         },
@@ -68,12 +75,20 @@ def israel_overrides():
         "tiers": {
             "tier1": {
                 "companies": [
-                    {"name": "monday.com", "careers_url": "https://monday.com/careers", "priority": 1},
+                    {
+                        "name": "monday.com",
+                        "careers_url": "https://monday.com/careers",
+                        "priority": 1,
+                    },
                 ]
             },
             "tier2": {
                 "companies": [
-                    {"name": "Tabnine", "careers_url": "https://tabnine.com/careers", "priority": 2},
+                    {
+                        "name": "Tabnine",
+                        "careers_url": "https://tabnine.com/careers",
+                        "priority": 2,
+                    },
                 ]
             },
         },
@@ -126,7 +141,7 @@ class TestMergeLocale:
         assert "dod clearance" in desc_words
         assert "must be eligible for us security clearance" in desc_words
         # No duplicates
-        assert len(desc_words) == len(set(w.lower() for w in desc_words))
+        assert len(desc_words) == len({w.lower() for w in desc_words})
 
     def test_bad_words_title_words_inherited(self, base_config, israel_overrides):
         """Locale doesn't override title_words, so base title_words persist."""

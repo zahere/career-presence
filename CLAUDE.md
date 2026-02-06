@@ -129,11 +129,14 @@ career-presence/
 │   └── repos/
 │       └── agenticraft/              # Flagship project docs
 │
-├── portfolio/
-│   ├── website/
-│   │   └── src/pages/                # Website source
-│   └── github/
-│       └── README.md                 # Alternative README
+├── website/                              # Astro portfolio site
+│   ├── src/
+│   │   ├── pages/                    # Astro page components (.astro)
+│   │   ├── layouts/                  # Layout components
+│   │   ├── content/pages/            # Generated markdown (gitignored)
+│   │   └── config/                   # Site config (gitignored)
+│   ├── public/                       # Static assets
+│   └── dist/                         # Build output (gitignored)
 │
 ├── jobs/
 │   ├── discovered/                   # Raw job data (gitignored)
@@ -176,12 +179,14 @@ career-presence/
 ├── materials/                        # Supporting documentation
 │   └── agenticraft_overview.md
 │
-├── tests/                            # Test suite
+├── tests/                            # Test suite (131 tests)
 │   ├── test_ats_scorer.py
-│   ├── test_config_validator.py
 │   ├── test_bad_word_filter.py
+│   ├── test_config_validator.py
 │   ├── test_deduplication.py
-│   └── test_easy_apply_answers.py
+│   ├── test_easy_apply_answers.py
+│   ├── test_locale_merge.py
+│   └── test_sync_manager.py
 │
 └── docs/                             # Reference documents
     ├── PROJECT_PLAN.md
@@ -238,6 +243,8 @@ If linting or tests fail, fix the issues before committing.
 - `github/profile/README.md` → personal GitHub profile
 - `resume/base/master.tex` → personal resume content
 - `data/experiences.json`, `data/projects.json`, `data/skills.json` → personal data
+- `website/src/content/` → generated website markdown (from master_profile)
+- `website/src/config/site.config.ts` → generated site config with personal data
 
 ---
 
@@ -303,6 +310,31 @@ application_answers:
   willing_to_relocate: "Yes"
   custom_answers:
     "How did you hear about us?": "LinkedIn"
+
+# Platform-specific content (overrides hardcoded defaults)
+website_content:
+  what_i_do: "Description of what you do..."
+  current_focus: ["Focus area 1", "Focus area 2"]
+  blog_description: "Blog description..."
+  blog_topics: ["Topic 1", "Topic 2"]
+  contact_intro: "Contact page intro..."
+  location_openness: "Open to remote opportunities worldwide."
+
+linkedin_content:
+  hashtags: { primary: [...], secondary: [...], niche: [...] }
+  hooks: { category: ["Hook 1", "Hook 2"] }
+  topic_suggestions: { type: ["Topic 1", "Topic 2"] }
+  post_ideas: { type: ["Idea 1", "Idea 2"] }
+  headline_templates: { role_type: "Headline template..." }
+  connection_templates: { context: "Template with {first_name}..." }
+
+github_content:
+  connect_interests: ["Interest 1", "Interest 2"]
+  footer_quote: "Footer quote for README..."
+
+resume_content:
+  summaries_by_role: { role_type: "Summary for role..." }
+  headlines_by_role: { role_type: "Headline for role..." }
 ```
 
 ---

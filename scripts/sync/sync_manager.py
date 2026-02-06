@@ -103,12 +103,23 @@ class PlatformSyncManager:
             # Update headline
             content = self._update_latex_headline(content, personal["headlines"]["resume"])
 
+            # Update projects section
+            content = self._sync_projects_section(content)
+
+            # Update experience section
+            content = self._sync_experience_section(content)
+
             # Backup and save
             backup_path = resume_path.with_suffix(".tex.bak")
             shutil.copy(resume_path, backup_path)
             resume_path.write_text(content)
 
             files_updated.append(str(resume_path))
+
+            # Compile to PDF
+            pdf_path = self._compile_resume_pdf()
+            if pdf_path:
+                files_updated.append(pdf_path)
 
         except Exception as e:
             errors.append(f"Resume sync failed: {str(e)}")
@@ -136,6 +147,121 @@ class PlatformSyncManager:
         # Look for headline pattern
         pattern = r"\\textbf{[^}]+\\textbullet[^}]+}"
         return re.sub(pattern, f"\\\\textbf{{{headline}}}", content)
+
+    def _sync_projects_section(self, content: str) -> str:
+        """Replace the Projects section in LaTeX with projects from master profile."""
+        projects = self.profile.get("projects", [])
+        if not projects:
+            return content
+
+        # Build LaTeX for each project
+        entries = []
+        for project in projects:
+            name = project["name"]
+            tech = ", ".join(project.get("technologies", []))
+            # Escape LaTeX special characters
+            name = name.replace("&", r"\&")
+            tech = tech.replace("&", r"\&")
+
+            highlights = project.get("highlights", [])
+            # Use first 2 highlights as resume bullets
+            bullets = highlights[:2]
+
+            entry = "      \\resumeProjectHeading\n"
+            entry += f"          {{\\textbf{{{name}}} $|$ \\emph{{{tech}}}}}{{}}  \n"
+            if bullets:
+                entry += "          \\resumeItemListStart\n"
+                for bullet in bullets:
+                    bullet = bullet.replace("&", r"\&").replace("%", r"\%")
+                    entry += f"            \\resumeItem{{{bullet}}}\n"
+                entry += "          \\resumeItemListEnd\n"
+            entries.append(entry)
+
+        new_section = "%-----------PROJECTS-----------\n"
+        new_section += "\\section{Projects}\n"
+        new_section += "    \\resumeSubHeadingListStart\n\n"
+        new_section += "\n".join(entries)
+        new_section += "\n    \\resumeSubHeadingListEnd\n"
+
+        # Replace between PROJECTS marker and EDUCATION marker
+        pattern = r"%-----------PROJECTS-----------.*?(?=%-----------EDUCATION-----------)"
+        # Use lambda to avoid re.sub interpreting backslashes in replacement
+        result = re.sub(pattern, lambda _: new_section + "\n", content, flags=re.DOTALL)
+        return result
+
+    def _sync_experience_section(self, content: str) -> str:
+        """Replace the Experience section in LaTeX with experience from master profile."""
+        experiences = self.profile.get("experience", [])
+        if not experiences:
+            return content
+
+        entries = []
+        for exp in experiences:
+            company = exp["company"].replace("&", r"\&")
+            role = exp["role"].replace("&", r"\&")
+            location = exp.get("location", "Remote").replace("&", r"\&")
+            start = exp.get("start_date", "")
+            end = exp.get("end_date") or "Present"
+
+            entry = "      \\resumeSubheading\n"
+            entry += f"        {{{role}}}{{{start} -- {end}}}\n"
+            entry += f"        {{{company}}}{{{location}}}\n"
+
+            bullets = exp.get("bullets", [])
+            if bullets:
+                entry += "        \\resumeItemListStart\n"
+                for bullet in bullets:
+                    text = bullet["text"].replace("&", r"\&").replace("%", r"\%")
+                    entry += f"          \\resumeItem{{{text}}}\n"
+                entry += "        \\resumeItemListEnd\n"
+            entries.append(entry)
+
+        new_section = "%-----------EXPERIENCE-----------\n"
+        new_section += "\\section{Experience}\n"
+        new_section += "  \\resumeSubHeadingListStart\n\n"
+        new_section += "\n".join(entries)
+        new_section += "\n  \\resumeSubHeadingListEnd\n"
+
+        # Replace between EXPERIENCE marker and PROJECTS marker
+        pattern = r"%-----------EXPERIENCE-----------.*?(?=%-----------PROJECTS-----------)"
+        result = re.sub(pattern, lambda _: new_section + "\n", content, flags=re.DOTALL)
+        return result
+
+    def _compile_resume_pdf(self) -> str | None:
+        """Compile the master LaTeX resume to PDF. Returns PDF path or None."""
+        import subprocess
+
+        resume_path = self.root / "resume" / "base" / "master.tex"
+        if not resume_path.exists():
+            return None
+
+        try:
+            for _ in range(2):
+                subprocess.run(
+                    ["pdflatex", "-interaction=nonstopmode", resume_path.name],
+                    cwd=resume_path.parent,
+                    capture_output=True,
+                    timeout=60,
+                )
+
+            pdf_path = resume_path.with_suffix(".pdf")
+            if pdf_path.exists():
+                # Copy to exports
+                exports_dir = self.root / "resume" / "exports"
+                exports_dir.mkdir(parents=True, exist_ok=True)
+                import shutil
+
+                export_path = exports_dir / "resume.pdf"
+                shutil.copy(pdf_path, export_path)
+                return str(export_path)
+        except FileNotFoundError:
+            pass  # pdflatex not installed
+        except subprocess.TimeoutExpired:
+            pass
+        except Exception:
+            pass
+
+        return None
 
     # ═══════════════════════════════════════════════════════════════════════
     # LINKEDIN SYNC
@@ -420,20 +546,35 @@ Source: master_profile.yaml
 
 ## 📫 Let's Connect
 
-- 💼 Open to opportunities in **AI Infrastructure**, **Multi-Agent Systems**, or **Research Engineering**
-- 🤝 Interested in collaborating on **open-source AI projects**
-- 💬 Happy to chat about **multi-agent coordination**, **LLMOps**, or **production AI systems**
+{self._format_connect_interests()}
 
 ---
 
 <div align="center">
 
-*"Building AI systems that actually work in production."*
+*"{self._get_github_content("footer_quote", "Building things that matter.")}"*
 
 ![Profile Views](https://komarev.com/ghpvc/?username={personal["social"]["github"].split("/")[-1]}&color=blueviolet&style=flat-square)
 
 </div>
 """
+
+    def _get_github_content(self, key: str, default: str = "") -> str:
+        """Get a value from the github_content profile section."""
+        value: str = self.profile.get("github_content", {}).get(key, default)
+        return value
+
+    def _format_connect_interests(self) -> str:
+        """Format GitHub connect interests as markdown list with emojis."""
+        items = self.profile.get("github_content", {}).get("connect_interests", [])
+        if not items:
+            return "- 💼 Open to new opportunities\n- 🤝 Interested in collaborating\n- 💬 Happy to chat"
+        emojis = ["💼", "🤝", "💬", "🌟", "🚀"]
+        lines = []
+        for i, item in enumerate(items):
+            emoji = emojis[i % len(emojis)]
+            lines.append(f"- {emoji} {item}")
+        return "\n".join(lines)
 
     def _generate_repo_readme(self, project: dict[str, Any]) -> str:
         """Generate README for a specific repository."""

@@ -2,20 +2,16 @@
 
 import pytest
 import yaml
-from pathlib import Path
-from pydantic import ValidationError
 
 from scripts.validation.config_validator import (
-    TargetsConfig,
-    MasterProfileConfig,
-    ApplicationAnswersConfig,
     BadWordsConfig,
     ExperienceRangeConfig,
-    load_validated_targets,
+    MasterProfileConfig,
+    TargetsConfig,
     load_validated_profile,
+    load_validated_targets,
     validate_all_configs,
 )
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TargetsConfig tests
@@ -38,14 +34,14 @@ class TestTargetsConfig:
             "tiers": {
                 "tier1": {
                     "companies": [
-                        {"name": "Anthropic", "careers_url": "https://anthropic.com/careers", "priority": 1}
+                        {
+                            "name": "Anthropic",
+                            "careers_url": "https://anthropic.com/careers",
+                            "priority": 1,
+                        }
                     ]
                 },
-                "tier2": {
-                    "companies": [
-                        {"name": "Scale AI", "lever_id": "scale", "priority": 2}
-                    ]
-                },
+                "tier2": {"companies": [{"name": "Scale AI", "lever_id": "scale", "priority": 2}]},
             },
             "exclusions": {
                 "companies": ["BadCorp"],
@@ -74,21 +70,25 @@ class TestTargetsConfig:
         assert config.experience_range.min_years == 3
 
     def test_get_all_companies(self):
-        config = TargetsConfig.model_validate({
-            "tiers": {
-                "tier1": {"companies": [{"name": "A"}]},
-                "tier2": {"companies": [{"name": "B"}, {"name": "C"}]},
+        config = TargetsConfig.model_validate(
+            {
+                "tiers": {
+                    "tier1": {"companies": [{"name": "A"}]},
+                    "tier2": {"companies": [{"name": "B"}, {"name": "C"}]},
+                }
             }
-        })
+        )
         assert len(config.get_all_companies()) == 3
 
     def test_get_company_tier(self):
-        config = TargetsConfig.model_validate({
-            "tiers": {
-                "tier1": {"companies": [{"name": "Anthropic"}]},
-                "tier2": {"companies": [{"name": "Scale AI"}]},
+        config = TargetsConfig.model_validate(
+            {
+                "tiers": {
+                    "tier1": {"companies": [{"name": "Anthropic"}]},
+                    "tier2": {"companies": [{"name": "Scale AI"}]},
+                }
             }
-        })
+        )
         assert config.get_company_tier("Anthropic") == "tier1"
         assert config.get_company_tier("anthropic") == "tier1"
         assert config.get_company_tier("Scale AI") == "tier2"
@@ -158,7 +158,10 @@ class TestMasterProfileConfig:
             ],
             "skills": {
                 "categories": [
-                    {"name": "Languages", "skills": [{"name": "Python", "proficiency": "expert", "years": 5}]}
+                    {
+                        "name": "Languages",
+                        "skills": [{"name": "Python", "proficiency": "expert", "years": 5}],
+                    }
                 ]
             },
         }
@@ -176,10 +179,14 @@ class TestMasterProfileConfig:
 class TestLoaders:
     def test_load_validated_targets(self, tmp_path):
         targets_file = tmp_path / "targets.yaml"
-        targets_file.write_text(yaml.dump({
-            "tiers": {"tier1": {"companies": [{"name": "TestCo"}]}},
-            "bad_words": {"title_words": ["intern"]},
-        }))
+        targets_file.write_text(
+            yaml.dump(
+                {
+                    "tiers": {"tier1": {"companies": [{"name": "TestCo"}]}},
+                    "bad_words": {"title_words": ["intern"]},
+                }
+            )
+        )
         config = load_validated_targets(targets_file)
         assert config.tiers["tier1"].companies[0].name == "TestCo"
         assert config.bad_words.title_words == ["intern"]
@@ -190,10 +197,14 @@ class TestLoaders:
 
     def test_load_validated_profile(self, tmp_path):
         profile_file = tmp_path / "master_profile.yaml"
-        profile_file.write_text(yaml.dump({
-            "personal": {"name": {"full": "Test"}, "contact": {"email": "a@b.com"}},
-            "application_answers": {"work_authorization": "Yes"},
-        }))
+        profile_file.write_text(
+            yaml.dump(
+                {
+                    "personal": {"name": {"full": "Test"}, "contact": {"email": "a@b.com"}},
+                    "application_answers": {"work_authorization": "Yes"},
+                }
+            )
+        )
         config = load_validated_profile(profile_file)
         assert config.personal.name.full == "Test"
         assert config.application_answers.work_authorization == "Yes"
@@ -215,18 +226,26 @@ class TestValidateAllConfigs:
 
     def test_valid_configs(self, tmp_path):
         targets_file = tmp_path / "targets.yaml"
-        targets_file.write_text(yaml.dump({
-            "tiers": {"tier1": {"companies": [{"name": "Co"}]}},
-            "target_roles": {"primary": ["Engineer"]},
-            "bad_words": {"title_words": ["junior"]},
-        }))
+        targets_file.write_text(
+            yaml.dump(
+                {
+                    "tiers": {"tier1": {"companies": [{"name": "Co"}]}},
+                    "target_roles": {"primary": ["Engineer"]},
+                    "bad_words": {"title_words": ["junior"]},
+                }
+            )
+        )
 
         profile_file = tmp_path / "profile.yaml"
-        profile_file.write_text(yaml.dump({
-            "personal": {"contact": {"email": "a@b.com"}},
-            "experience": [{"id": "x", "company": "C", "role": "R"}],
-            "application_answers": {"work_authorization": "Yes"},
-        }))
+        profile_file.write_text(
+            yaml.dump(
+                {
+                    "personal": {"contact": {"email": "a@b.com"}},
+                    "experience": [{"id": "x", "company": "C", "role": "R"}],
+                    "application_answers": {"work_authorization": "Yes"},
+                }
+            )
+        )
 
         result = validate_all_configs(targets_file, profile_file)
         assert result["valid"] is True

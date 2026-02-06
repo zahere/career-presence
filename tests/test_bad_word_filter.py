@@ -2,8 +2,7 @@
 
 import pytest
 
-from scripts.discovery.job_searcher import apply_targets_filter, _extract_experience_years
-
+from scripts.discovery.job_searcher import _extract_experience_years, apply_targets_filter
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Experience year extraction
@@ -63,25 +62,45 @@ class TestBadWordFiltering:
         }
 
     def test_no_bad_words_no_penalty(self, targets_with_bad_words):
-        jobs = [{"company": "TestCo", "title": "Senior AI Engineer", "description": "5+ years experience"}]
+        jobs = [
+            {
+                "company": "TestCo",
+                "title": "Senior AI Engineer",
+                "description": "5+ years experience",
+            }
+        ]
         result = apply_targets_filter(jobs, targets_with_bad_words)
         assert result[0]["bad_word_penalty"] == 0.0
         assert result[0]["bad_words_matched"] == []
 
     def test_title_bad_word_penalty(self, targets_with_bad_words):
-        jobs = [{"company": "TestCo", "title": "Junior AI Engineer", "description": "Some description"}]
+        jobs = [
+            {"company": "TestCo", "title": "Junior AI Engineer", "description": "Some description"}
+        ]
         result = apply_targets_filter(jobs, targets_with_bad_words)
         assert result[0]["bad_word_penalty"] == 5.0
         assert "title:junior" in result[0]["bad_words_matched"]
 
     def test_description_bad_word_penalty(self, targets_with_bad_words):
-        jobs = [{"company": "TestCo", "title": "AI Engineer", "description": "security clearance required for this role"}]
+        jobs = [
+            {
+                "company": "TestCo",
+                "title": "AI Engineer",
+                "description": "security clearance required for this role",
+            }
+        ]
         result = apply_targets_filter(jobs, targets_with_bad_words)
         assert result[0]["bad_word_penalty"] == 5.0
         assert "desc:security clearance required" in result[0]["bad_words_matched"]
 
     def test_multiple_bad_words_stack(self, targets_with_bad_words):
-        jobs = [{"company": "TestCo", "title": "Junior Intern Engineer", "description": "us citizen only"}]
+        jobs = [
+            {
+                "company": "TestCo",
+                "title": "Junior Intern Engineer",
+                "description": "us citizen only",
+            }
+        ]
         result = apply_targets_filter(jobs, targets_with_bad_words)
         # "junior" + "intern" in title + "us citizen only" in description = 3 * 5.0 = 15.0
         assert result[0]["bad_word_penalty"] == 15.0
@@ -105,7 +124,11 @@ class TestBadWordFiltering:
     def test_soft_filter_keeps_all_jobs(self, targets_with_bad_words):
         """Bad words are soft penalties, not hard exclusions."""
         jobs = [
-            {"company": "A", "title": "Junior Intern Director", "description": "security clearance required, us citizen only"},
+            {
+                "company": "A",
+                "title": "Junior Intern Director",
+                "description": "security clearance required, us citizen only",
+            },
         ]
         result = apply_targets_filter(jobs, targets_with_bad_words)
         # Job should still be in results (soft filter)
@@ -131,7 +154,9 @@ class TestExperienceRangeMatching:
         }
 
     def test_in_range(self, targets_with_exp_range):
-        jobs = [{"company": "Co", "title": "Engineer", "description": "5+ years of experience required"}]
+        jobs = [
+            {"company": "Co", "title": "Engineer", "description": "5+ years of experience required"}
+        ]
         result = apply_targets_filter(jobs, targets_with_exp_range)
         assert result[0]["experience_match"] == "in_range"
         assert result[0]["required_experience_years"] == 5

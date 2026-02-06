@@ -2,7 +2,6 @@
 
 import pytest
 import yaml
-from pathlib import Path
 
 from scripts.submission.easy_apply_answers import AnswerResolver, ResolvedAnswer
 
@@ -169,7 +168,13 @@ class TestFitToOptions:
         result = resolver.resolve(
             "What is your highest degree?",
             field_type="dropdown",
-            options=["High School", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD"],
+            options=[
+                "High School",
+                "Associate's Degree",
+                "Bachelor's Degree",
+                "Master's Degree",
+                "PhD",
+            ],
         )
         assert result is not None
         assert result.answer == "Bachelor's Degree"

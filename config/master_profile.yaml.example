@@ -296,3 +296,97 @@ application_answers:
   custom_answers:
     "How did you hear about us?": "LinkedIn"
     "Are you comfortable working in a remote environment?": "Yes"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WEBSITE DYNAMIC CONTENT
+# Content used by scripts/website/generator.py
+# ═══════════════════════════════════════════════════════════════════════════
+website_content:
+  what_i_do: "I specialize in building [your specialty]."
+  current_focus:
+    - "Building [current project or focus area]"
+    - "Researching [research interest]"
+    - "Exploring [technology or methodology]"
+  blog_description: "Thoughts on [your topics]."
+  blog_topics:
+    - "Topic 1"
+    - "Topic 2"
+    - "Topic 3"
+  contact_intro: "I'm always interested in hearing about new opportunities and collaborations."
+  location_openness: "Open to remote opportunities worldwide."
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LINKEDIN DYNAMIC CONTENT
+# Content used by scripts/linkedin/linkedin_manager.py
+# ═══════════════════════════════════════════════════════════════════════════
+linkedin_content:
+  hashtags:
+    primary: ["#YourIndustry", "#YourSkill1", "#YourSkill2"]
+    secondary: ["#BuildInPublic", "#TechCareers", "#OpenSource"]
+    niche: ["#NicheSkill1", "#NicheSkill2"]
+
+  hooks:
+    topic1:
+      - "Attention-grabbing statement about topic 1"
+      - "Another hook for topic 1"
+    topic2:
+      - "Attention-grabbing statement about topic 2"
+
+  topic_suggestions:
+    technical_insight:
+      - "Technical topic 1"
+      - "Technical topic 2"
+    build_in_public:
+      - "Project weekly update"
+      - "New feature implementation"
+    industry_commentary:
+      - "Industry trend analysis"
+      - "Tool/framework review"
+    career_update:
+      - "Job search progress"
+      - "Skill development"
+
+  post_ideas:
+    technical_insight:
+      - "What I learned building [project feature]"
+      - "How we achieved [metric] with [approach]"
+    build_in_public:
+      - "Week N: Implementing [feature] in [project]"
+      - "How we scaled [project] to [metric]"
+    industry_commentary:
+      - "Hot take: [opinion about industry trend]"
+      - "Why [technology] will define [outcome]"
+
+  headline_templates:
+    research: "[Role] | [Specialty] | [Achievement]"
+    founding: "[Role] | Built {project} from 0 → production | Open to early-stage"
+    platform: "[Role] | [Infrastructure Specialty] | [Metric]"
+    default: "[Role] | Building {project} | Open to Opportunities"
+
+  connection_templates:
+    recruiter: "Hi {first_name}, I saw {company} is hiring for {role} roles. I'd love to learn more! Best regards"
+    hiring_manager: "Hi {first_name}, Just applied for the {role} role at {company}. Would love to connect!"
+    peer: "Hi {first_name}, I came across your work as {role} at {company}. Would love to exchange ideas!"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GITHUB DYNAMIC CONTENT
+# Content used by scripts/sync/sync_manager.py for GitHub README
+# ═══════════════════════════════════════════════════════════════════════════
+github_content:
+  connect_interests:
+    - "Open to opportunities in **[Area 1]**, **[Area 2]**, or **[Area 3]**"
+    - "Interested in collaborating on **[type of projects]**"
+    - "Happy to chat about **[topic 1]**, **[topic 2]**, or **[topic 3]**"
+  footer_quote: "Your personal tagline or motto."
+
+# ═══════════════════════════════════════════════════════════════════════════
+# RESUME DYNAMIC CONTENT
+# Content used by scripts/tailoring/resume_tailor.py
+# ═══════════════════════════════════════════════════════════════════════════
+resume_content:
+  summaries_by_role:
+    role1: "Summary for role 1 emphasizing relevant experience and skills."
+    role2: "Summary for role 2 with different emphasis."
+  headlines_by_role:
+    role1: "Role 1 Title • Specialty"
+    role2: "Role 2 Title • Specialty"

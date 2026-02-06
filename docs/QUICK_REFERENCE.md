@@ -53,8 +53,12 @@ career-presence/
 │   └── exports/                  # PDF/DOCX outputs (gitignored)
 ├── data/
 │   └── applications.db           # SQLite tracking database (gitignored)
-├── tests/                        # Test suite (118 tests)
+├── tests/                        # Test suite (131 tests)
 ├── website/                      # Astro portfolio site
+│   ├── src/pages/                # Astro page components (.astro)
+│   ├── src/layouts/              # Layout components
+│   ├── src/content/pages/        # Generated markdown (gitignored)
+│   └── src/config/               # Site config (gitignored)
 ├── CLAUDE.md                     # Agent instructions
 └── AGENTS.md                     # Multi-agent coordination
 ```
@@ -127,8 +131,8 @@ uv run cps track app_12345 withdrawn "Accepted other offer"
 ### Platform Sync
 
 ```bash
-uv run cps sync              # Sync all platforms
-uv run cps sync resume       # Sync resume only
+uv run cps sync all          # Sync all platforms
+uv run cps sync resume       # Sync resume only (+ auto PDF compile)
 uv run cps sync linkedin     # Sync LinkedIn only
 uv run cps sync github       # Sync GitHub only
 uv run cps sync website      # Sync website only
@@ -216,6 +220,10 @@ Source of truth for all platforms. Key sections:
 - `projects` - Featured projects
 - `education` - Academic background
 - `application_answers` - Auto-fill for Easy Apply questions
+- `website_content` - Website text (what I do, current focus, blog topics, contact intro)
+- `linkedin_content` - LinkedIn content (hashtags, hooks, topics, headlines, connection templates)
+- `github_content` - GitHub README content (connect interests, footer quote)
+- `resume_content` - Resume tailoring (summaries and headlines by role type)
 
 ## ATS Score Breakdown
 

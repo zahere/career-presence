@@ -28,8 +28,7 @@ docs/DIGITAL_PRESENCE_EXPANSION.md
 materials/agenticraft_overview.md
 
 # Website content (contains personal info - generated from master_profile)
-website/src/data/pages/*.md
-!website/src/data/pages/*.example.md
+website/src/content/
 
 # Website config (contains personal info)
 website/src/config/site.config.ts
@@ -185,6 +184,7 @@ temp/
 # MCP SERVERS
 # ═══════════════════════════════════════════════════════════════════════════
 mcp-servers/*/node_modules/
+.playwright-mcp/
 
 # ═══════════════════════════════════════════════════════════════════════════
 # WEBSITE (Generated)
